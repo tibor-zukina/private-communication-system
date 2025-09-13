@@ -1,0 +1,254 @@
+body {
+    font-family: "Arial", "Helvetica", sans-serif;
+    padding: 0;
+    background-color: #3d3d3d;
+    background-repeat: repeat;
+    background-image: url(https://management.cumnsee.com/video-call/images/empty_background_pattern.jpg);
+}
+
+::-webkit-scrollbar {
+    width: 1em;
+}
+
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(20, 30, 0, 0.1);
+    -moz-box-shadow: inset 0 0 6px rgba(20, 30, 0, 0.1);
+    box-shadow: inset 0 0 6px rgba(20, 30, 0, 0.1);
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.35);
+}
+
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    -webkit-box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.8);
+    -moz-box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.8);
+    box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.8);
+}
+
+input[type=button] {
+    color: white;
+    background-color: #ed62b5;
+    padding: 16px 16px;
+    margin: 16px 0;
+}
+
+input[type=text],
+input[type=password],
+input[type=email] {
+    padding: 12px 16px;
+    font-size: 0.9em;
+    border: 1px solid #2e2e2e;
+    border-radius: 4px;
+    text-align: left;
+    color: white;
+    background-color: #3d3d3d;
+    transition: all 0.5s ease-in-out;
+    -webkit-transition: all 0.5s ease-in-out;
+    -moz-transition: all 0.5s ease-in-out;
+    -o-transition: all 0.5s ease-in-out;
+}
+
+input[type=text]:focus,
+input[type=password]:focus,
+input[type=email]:focus {
+    border: 1px solid #515151;
+}
+
+textArea {
+    width: 100%;
+    box-sizing: border-box;    
+    max-width: 90%;
+    font-size: 0.9em;
+    font-family: "Arial", "Helvetica", sans-serif;
+    padding: 8px 16px;
+    height: auto;
+    resize: none;
+    background-color: #3d3d3d;
+    color: white;
+    border: 1px solid #2e2e2e;
+    border-radius: 6px;
+    white-space: normal;
+    -moz-text-align: left;
+    -webkit-text-align: left;
+    -ms-text-align: left;
+    -o-text-align: left;
+    text-align: left;
+    -moz-text-align-last: left;
+    -webkit-text-align-last: left;
+    -ms-text-align-last: left;
+    text-align-last: left;
+    transition: all 0.5s ease-in-out;
+    -webkit-transition: all 0.5s ease-in-out;
+    -moz-transition: all 0.5s ease-in-out;
+    -o-transition: all 0.5s ease-in-out;
+}
+
+textArea:focus {
+    border: 1px solid #515151;
+}
+
+.callButton {
+    color: white;
+    font-size: 0.9em;
+    border: 1px solid #ed6280;
+    border-radius: 5%;
+    background-color: #ed62b5;
+    padding: 8px 8px;
+    margin: 8px 0;
+}
+
+.callButton:enabled:hover {
+    color: #bfbfbf;
+    border: 1px solid #d44967;
+    background-color: #b24a88;
+    cursor: pointer;
+    -webkit-transform: scale(1.05);
+    -ms-transform: scale(1.05);
+    -moz-transform: scale(1.05);
+    -o-transform: scale(1.05);
+    transform: scale(1.05);
+}
+
+.invisibleButton {
+    display: none;
+}
+
+span {
+    color: white;
+    margin: 16px 0;
+    font-size: 1.1em;
+}
+
+#localVideo {
+    width: 100%;
+    height: auto;
+    border: 1px solid #5b5b5b;
+    border: 1px solid rgba(91,91,91,0.75);
+    border-radius: 2%;
+}
+
+.localVideoDiv {
+    width: 100%;
+    max-width: 640px;
+    position: relative;
+}
+
+#meetingStatus,
+#invitationUrl {
+    display: block;
+}
+
+#section {
+  position: relative;
+  width: 96%;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 2%;
+  max-height: 999999px;
+  -webkit-text-size-adjust: none;
+  -ms-text-size-adjust: none; 
+}
+
+#streamDiv,
+#chatDiv {
+   width: 48%;
+   margin-right: 2%;
+   float: left;
+}
+
+.sentMessageDiv {
+  color: white;
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 96%;
+  margin: auto;
+}
+
+.sentMessageText {
+    margin: 9px 2% 9px 2% ;
+    text-align: left;
+    width: 80%;
+}
+
+.receivedMessageDiv {
+  color: white;
+  position: relative;
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  width: 96%;
+  margin: auto;
+}
+
+.receivedMessageText {
+    margin: 9px 2% 9px auto;
+    min-height: 42px;
+    text-align: right;
+    display: block;
+    width: 80%;
+    border-radius: 52px;
+}
+
+#chatContentDiv {
+    height: 75vh;
+    overflow-y: auto;
+}
+
+#sendChatDiv {
+   height: 19vh;
+   overflow-y: auto;
+}
+
+.chatTextDiv {
+    display: inline-block;
+    background: #383838;
+    width: auto;
+    word-break: normal;
+    padding: 6px;
+    border-radius: 20px;
+    vertical-align: middle;
+}
+
+.chatTextDiv span {
+    float: right;
+    margin: 5px 7px;
+    text-align: left;
+    line-height: 20px;
+}
+
+.streamingSendWidget {
+  width: 8%;
+  margin-left: 1%;
+}
+
+.streamingSendWidget:hover {
+  cursor: pointer;
+  -webkit-transform: scale(1.05);
+  -ms-transform: scale(1.05);
+  -moz-transform: scale(1.05);
+  -o-transform: scale(1.05);
+  transform: scale(1.05);
+}
+
+.fullscreenWidget {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 32px;
+  height: auto;
+  display: none;
+}
+
+.fullscreenWidget:hover {
+  cursor: pointer;
+  -ms-filter: brightness(75%);
+  -moz-filter: brightness(75%);
+  -webkit-filter: brightness(75%);
+  -o-filter: brightness(75%);
+  filter: brightness(75%);
+  background-color: #3d3d3d;
+  background-color: rgba(61,61,61,0.3);
+  border: none;
+  border-radius: 50%;
+}

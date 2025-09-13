@@ -1,0 +1,10 @@
+{
+  "peerServer": {
+    "port": 3728,
+    "concurrent_limit": 100
+  },
+  "ssl": {
+    "key": "/etc/letsencrypt/live/management.perpetuumit.com/privkey.pem",
+    "cert": "/etc/letsencrypt/live/management.perpetuumit.com/cert.pem"
+  }
+}

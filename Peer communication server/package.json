@@ -1,0 +1,15 @@
+{
+  "name": "peer_server",
+  "version": "1.0.0",
+  "description": "This is a project for controlling different peer to peer video calls and chat server for private, self-hosted communications.",
+  "main": "peer_server.js",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "peer": "^1.0.2"
+  },
+  "scripts": {
+    "start": "node peer_server.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
