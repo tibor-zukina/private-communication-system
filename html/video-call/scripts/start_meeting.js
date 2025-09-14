@@ -284,3 +284,12 @@ function enumerationErrorHandler(error) {
 function getMediaErrorHandler(error) {
     console.error('Media access error:', error);
 }
+
+function addSentMessage(text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'sentMessageDiv';
+    messageDiv.innerHTML = `<div class="sentMessageText"><div class="chatTextDiv"><span class="chatTextDiv">${text}</span></div></div>`;
+    const chatContentDiv = document.getElementById('chatContentDiv');
+    chatContentDiv.appendChild(messageDiv);
+    chatContentDiv.scrollTop = chatContentDiv.scrollHeight;
+}
