@@ -1,7 +1,6 @@
 var displayStream;
 var capturingDisplay = false;
-var recordingMode;
-var toggleStream;
+var recordingMode = 'video';
 var videoDeviceIds = [];
 var currentIndex = 0;
 
