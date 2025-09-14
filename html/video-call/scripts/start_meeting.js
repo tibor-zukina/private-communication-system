@@ -104,7 +104,7 @@ function addSentMessage(text) {
 function getUserMediaSuccess(capturedStream) {
 
     document.getElementById('meetingStatus').innerHTML = 'Waiting for the other side to join...';
-    document.getElementById('invitationUrl').innerHTML = 'Invitation url: https://' + host + '/video-call/join-meeting.php?path=secretPath&key=secretKey&id=' + peerId;
+    document.getElementById('invitationUrl').innerHTML = 'Invitation url: https://' + host + '/video-call/join-meeting.php?path=' + params.get('path') + '&key=' + params.get('key') + '&id=' + peerId;
     localStream = makeCallStream(capturedStream);
     peer.on('call', function(call) {
         lastCallTime = Date.now();
