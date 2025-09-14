@@ -10,7 +10,7 @@ let startTime = 0;
 let previousState = 'not started';
 let callPeerConnection;
 let peer;
-let localStream;
+let meetingLocalStream;
 
 // Utility: Random Peer ID
 function makeRandomId(length) {
@@ -118,8 +118,8 @@ function addSentMessage(text) {
 
 // Handle success from getUserMedia
 function getUserMediaSuccess(capturedStream) {
-    localStream = makeCallStream(capturedStream);
-    const call = peer.call(meetingId, localStream);
+    meetingLocalStream = makeCallStream(capturedStream);
+    const call = peer.call(meetingId, meetingLocalStream);
 
     call.on('stream', (remoteStream) => {
         callPeerConnection = call.peerConnection;

@@ -2,7 +2,7 @@ const host = '64.176.216.148';
 let peer;
 let peerId;
 let meetingDeviceIds = [];
-let localStream;
+let meetingLocalStream;
 let chatConn;
 let callerPeerId;
 let chatStarted = false;
@@ -105,13 +105,13 @@ function getUserMediaSuccess(capturedStream) {
     document.getElementById('meetingStatus').innerHTML = 'Waiting for the other side to join...';
     document.getElementById('invitationUrl').innerHTML = `Invitation url: https://${host}/video-call/join-meeting.php?path=${params.get('path')}&key=${params.get('key')}&id=${peerId}`;
 
-    localStream = makeCallStream(capturedStream);
+    meetingLocalStream = makeCallStream(capturedStream);
 
     peer.on('call', (call) => {
         lastCallTime = Date.now();
         call.timeStarted = lastCallTime;
         callerPeerId = call.peer;
-        call.answer(localStream);
+        call.answer(meetingLocalStream);
 
         call.on('stream', (remoteStream) => {
             const localVideo = document.getElementById('localVideo');
