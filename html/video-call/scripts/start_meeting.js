@@ -188,7 +188,29 @@ async function sendFile(file) {
 // Media capture success handler
 function getUserMediaSuccess(capturedStream) {
     document.getElementById('meetingStatus').innerHTML = 'Waiting for the other side to join...';
-    document.getElementById('invitationUrl').innerHTML = `Invitation url: https://${host}/video-call/join-meeting.php?path=${params.get('path')}&key=${params.get('key')}&id=${peerId}`;
+
+    // Generate invitation URL
+    const invitationUrl = `https://${host}/video-call/join-meeting.php?path=${params.get('path')}&key=${params.get('key')}&id=${peerId}`;
+    const invitationElem = document.getElementById('invitationUrl');
+    invitationElem.innerHTML = `<span id="copyInvitationLink" style="cursor:pointer;text-decoration:underline;">Copy invitation link</span>`;
+
+    document.getElementById('copyInvitationLink').onclick = () => {
+        navigator.clipboard.writeText(invitationUrl).then(() => {
+            invitationElem.innerHTML = `<span style="color:#ed62b5;">Link copied!</span>`;
+            setTimeout(() => {
+                invitationElem.innerHTML = `<span id="copyInvitationLink" style="cursor:pointer;text-decoration:underline;">Copy invitation link</span>`;
+                document.getElementById('copyInvitationLink').onclick = () => {
+                    navigator.clipboard.writeText(invitationUrl).then(() => {
+                        invitationElem.innerHTML = `<span style="color:#ed62b5;">Link copied!</span>`;
+                        setTimeout(() => {
+                            invitationElem.innerHTML = `<span id="copyInvitationLink" style="cursor:pointer;text-decoration:underline;">Copy invitation link</span>`;
+                            document.getElementById('copyInvitationLink').onclick = arguments.callee;
+                        }, 1200);
+                    });
+                };
+            }, 1200);
+        });
+    };
 
     meetingLocalStream = makeCallStream(capturedStream);
 
