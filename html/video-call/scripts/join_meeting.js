@@ -106,7 +106,7 @@ function openChatConnection(meetingId) {
         });
         await generateMeetingKey();
         sendMeetingKey();
-        addFileInput();
+        // addFileInput(); // Removed as per change
     });
 }
 
@@ -193,18 +193,6 @@ async function sendFile(file) {
         iv: Array.from(iv),
         encrypted: Array.from(new Uint8Array(encrypted))
     });
-}
-
-// Add file input to chat UI
-function addFileInput() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = async (e) => {
-        if (e.target.files.length > 0) {
-            await sendFile(e.target.files[0]);
-        }
-    };
-    document.getElementById('sendChatDiv').appendChild(input);
 }
 
 // Display received message
@@ -310,6 +298,18 @@ function connectionLost() {
 }
 
 // Toggle button visibility
+function enableToggle() {
+    const toggleButton = document.getElementById('toggleButton');
+    toggleButton.className = 'callButton';
+}
+
+// Remove addFileInput and update file sending logic:
+document.getElementById('fileInput').onchange = async (e) => {
+    if (!chatActive || !meetingKey) return;
+    if (e.target.files.length > 0) {
+        await sendFile(e.target.files[0]);
+    }
+};
 function enableToggle() {
     const toggleButton = document.getElementById('toggleButton');
     toggleButton.className = 'callButton';

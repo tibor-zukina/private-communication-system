@@ -28,6 +28,10 @@
 <div id="sendChatDiv">
 <textarea type="text" rows="3" maxlength="500" id="message" class="streamingChatInput" placeholder="Type message here"></textarea>
 <img src="/video-call/images/send_gray.png" onclick="sendMessage()" class="streamingSendWidget" alt="Send message" id="sendMessage" draggable="false">
+<label for="fileInput">
+    <img src="/video-call/images/file_gray.png" class="streamingSendWidget" alt="Send file" id="sendFile" draggable="false" style="cursor:pointer;">
+</label>
+<input type="file" id="fileInput" style="display:none" />
 </div>
 </div>
 </div>
@@ -35,6 +39,8 @@
 <link rel="stylesheet" type="text/css" href="/video-call/design/design.css" />
 <script src="/video-call/scripts/peerjs.js"></script>
 <script src="/video-call/scripts/video_utils.js"></script>
+<script src="/video-call/scripts/chat_utils.js"></script>
+<script src="/video-call/scripts/encryption_utils.js"></script>
 <script src="/video-call/scripts/join_meeting.js"></script>
 </body>
 </html>

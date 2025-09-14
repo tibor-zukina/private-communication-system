@@ -81,7 +81,6 @@ function startChat() {
         chatConn = conn;
         chatConn.on('data', handleChatData);
         chatConn.on('close', () => {});
-        addFileInput(); // Ensure file input is present after chat connection
     });
 
     const messageBox = document.getElementById('message');
@@ -89,6 +88,14 @@ function startChat() {
         if (e.keyCode === 13 && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
+        }
+    };
+
+    // Remove addFileInput and update file sending logic:
+    document.getElementById('fileInput').onchange = async (e) => {
+        if (!chatStarted || !meetingKey) return;
+        if (e.target.files.length > 0) {
+            await sendFile(e.target.files[0]);
         }
     };
 }
@@ -176,18 +183,6 @@ async function sendFile(file) {
         iv: Array.from(iv),
         encrypted: Array.from(new Uint8Array(encrypted))
     });
-}
-
-// Add file input to chat UI
-function addFileInput() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.onchange = async (e) => {
-        if (e.target.files.length > 0) {
-            await sendFile(e.target.files[0]);
-        }
-    };
-    document.getElementById('sendChatDiv').appendChild(input);
 }
 
 // Media capture success handler
@@ -291,13 +286,4 @@ function enumerationErrorHandler(error) {
 
 function getMediaErrorHandler(error) {
     console.error('Media access error:', error);
-}
-
-function addSentMessage(text) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'sentMessageDiv';
-    messageDiv.innerHTML = `<div class="sentMessageText"><div class="chatTextDiv"><span class="chatTextDiv">${text}</span></div></div>`;
-    const chatContentDiv = document.getElementById('chatContentDiv');
-    chatContentDiv.appendChild(messageDiv);
-    chatContentDiv.scrollTop = chatContentDiv.scrollHeight;
 }
