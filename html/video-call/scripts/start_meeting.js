@@ -12,6 +12,10 @@ let previousState = 'not started';
 let lastCallTime;
 let callPeerConnection;
 
+// Crypto
+let meetingKey; // CryptoKey for AES-GCM
+let meetingKeyRaw; // ArrayBuffer for export/import
+
 // Utility to generate a secure random ID
 function makeRandomId(length) {
     const characters = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789';
@@ -43,11 +47,23 @@ const params = new URLSearchParams(window.location.search);
 setUpPeer(params.get('path'), params.get('key'));
 
 // Start meeting process
-function startMeeting() {
+async function startMeeting() {
+    await generateMeetingKey();
+
     const callButton = document.querySelector('.callButton');
     callButton.disabled = true;
     callButton.value = 'Meeting started';
     navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(enumerationErrorHandler);
+}
+
+// Generate AES-GCM key on meeting start
+async function generateMeetingKey() {
+    meetingKey = await window.crypto.subtle.generateKey(
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+    );
+    meetingKeyRaw = await window.crypto.subtle.exportKey("raw", meetingKey);
 }
 
 // Set up chat after PeerJS call connects
@@ -56,8 +72,10 @@ function startChat() {
 
     peer.on('connection', (conn) => {
         chatConn = conn;
-        chatConn.on('data', addReceivedMessage);
+        chatConn.on('data', handleChatData);
         chatConn.on('close', () => {});
+        sendMeetingKey();
+        addFileInput(); // Ensure file input is present after chat connection
     });
 
     const messageBox = document.getElementById('message');
@@ -69,35 +87,99 @@ function startChat() {
     };
 }
 
-// Send message through PeerJS DataChannel
-function sendMessage() {
-    if (!chatStarted) return;
+// Send key to peer via chatConn
+function sendMeetingKey() {
+    if (chatConn && meetingKeyRaw) {
+        chatConn.send({ type: "meeting-key", key: Array.from(new Uint8Array(meetingKeyRaw)) });
+    }
+}
+
+// Encrypt and send chat message
+async function sendMessage() {
+    if (!chatStarted || !meetingKey) return;
 
     const messageBox = document.getElementById('message');
     const messageText = messageBox.value;
     messageBox.value = '';
+
+    // Encrypt message
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encoder = new TextEncoder();
+    const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        meetingKey,
+        encoder.encode(messageText)
+    );
+
+    chatConn.send({
+        type: "chat",
+        iv: Array.from(iv),
+        encrypted: Array.from(new Uint8Array(encrypted))
+    });
+
     addSentMessage(messageText);
-    chatConn.send(messageText);
 }
 
-// UI: Add received chat message
-function addReceivedMessage(text) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'receivedMessageDiv';
-    messageDiv.innerHTML = `<div class="receivedMessageText"><div class="chatTextDiv"><span class="chatTextDiv">${text}</span></div></div>`;
-    const chatContentDiv = document.getElementById('chatContentDiv');
-    chatContentDiv.appendChild(messageDiv);
-    chatContentDiv.scrollTop = chatContentDiv.scrollHeight;
+// Handle incoming chat data (for file and key)
+async function handleChatData(data) {
+    if (typeof data === "object" && data.type === "file") {
+        // Decrypt file
+        const iv = new Uint8Array(data.iv);
+        const encrypted = new Uint8Array(data.encrypted);
+        const decrypted = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv },
+            meetingKey,
+            encrypted
+        );
+        const blob = new Blob([decrypted], { type: data.mime });
+        const url = URL.createObjectURL(blob);
+        addReceivedMessage(`<a href="${url}" download="${data.name}">Download ${data.name}</a>`);
+    } else if (typeof data === "object" && data.type === "meeting-key") {
+        // Ignore, only sender generates key
+    } else if (typeof data === "object" && data.type === "chat") {
+        // Decrypt chat message
+        const iv = new Uint8Array(data.iv);
+        const encrypted = new Uint8Array(data.encrypted);
+        const decrypted = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv },
+            meetingKey,
+            encrypted
+        );
+        const decoder = new TextDecoder();
+        addReceivedMessage(decoder.decode(decrypted));
+    } else {
+        addReceivedMessage(data);
+    }
 }
 
-// UI: Add sent chat message
-function addSentMessage(text) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'sentMessageDiv';
-    messageDiv.innerHTML = `<div class="sentMessageText"><div class="chatTextDiv"><span class="chatTextDiv">${text}</span></div></div>`;
-    const chatContentDiv = document.getElementById('chatContentDiv');
-    chatContentDiv.appendChild(messageDiv);
-    chatContentDiv.scrollTop = chatContentDiv.scrollHeight;
+// Encrypt and send file
+async function sendFile(file) {
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const fileBuffer = await file.arrayBuffer();
+    const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        meetingKey,
+        fileBuffer
+    );
+    chatConn.send({
+        type: "file",
+        name: file.name,
+        mime: file.type,
+        iv: Array.from(iv),
+        encrypted: Array.from(new Uint8Array(encrypted))
+    });
+}
+
+// Add file input to chat UI
+function addFileInput() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = async (e) => {
+        if (e.target.files.length > 0) {
+            await sendFile(e.target.files[0]);
+        }
+    };
+    document.getElementById('sendChatDiv').appendChild(input);
 }
 
 // Media capture success handler

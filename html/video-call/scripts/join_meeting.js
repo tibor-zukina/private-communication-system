@@ -11,6 +11,7 @@ let previousState = 'not started';
 let callPeerConnection;
 let peer;
 let meetingLocalStream;
+let meetingKey; // CryptoKey for AES-GCM
 
 // Utility: Random Peer ID
 function makeRandomId(length) {
@@ -64,6 +65,112 @@ function startChat(meetingId) {
     };
 }
 
+// Import AES-GCM key from raw bytes
+async function importMeetingKey(rawBytes) {
+    meetingKey = await window.crypto.subtle.importKey(
+        "raw",
+        new Uint8Array(rawBytes),
+        { name: "AES-GCM" },
+        true,
+        ["encrypt", "decrypt"]
+    );
+}
+
+// Encrypt and send chat message
+async function sendMessage() {
+    if (!chatActive || !meetingKey) return;
+
+    const messageInput = document.getElementById('message');
+    const messageText = messageInput.value;
+    messageInput.value = '';
+
+    // Encrypt message
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encoder = new TextEncoder();
+    const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        meetingKey,
+        encoder.encode(messageText)
+    );
+
+    chatConn.send({
+        type: "chat",
+        iv: Array.from(iv),
+        encrypted: Array.from(new Uint8Array(encrypted))
+    });
+
+    addSentMessage(messageText);
+}
+
+// Handle incoming chat data (for file and key)
+async function handleChatData(data) {
+    if (typeof data === "object" && data.type === "meeting-key") {
+        await importMeetingKey(data.key);
+    } else if (typeof data === "object" && data.type === "file") {
+        if (!meetingKey) {
+            addReceivedMessage("No key yet, can't decrypt file.");
+            return;
+        }
+        const iv = new Uint8Array(data.iv);
+        const encrypted = new Uint8Array(data.encrypted);
+        const decrypted = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv },
+            meetingKey,
+            encrypted
+        );
+        const blob = new Blob([decrypted], { type: data.mime });
+        const url = URL.createObjectURL(blob);
+        addReceivedMessage(`<a href="${url}" download="${data.name}">Download ${data.name}</a>`);
+    } else if (typeof data === "object" && data.type === "chat") {
+        // Decrypt chat message
+        const iv = new Uint8Array(data.iv);
+        const encrypted = new Uint8Array(data.encrypted);
+        const decrypted = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv },
+            meetingKey,
+            encrypted
+        );
+        const decoder = new TextDecoder();
+        addReceivedMessage(decoder.decode(decrypted));
+    } else {
+        addReceivedMessage(data);
+    }
+}
+
+// Encrypt and send file
+async function sendFile(file) {
+    if (!meetingKey) {
+        addSentMessage("No key yet, can't send file.");
+        return;
+    }
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const fileBuffer = await file.arrayBuffer();
+    const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        meetingKey,
+        fileBuffer
+    );
+    chatConn.send({
+        type: "file",
+        name: file.name,
+        mime: file.type,
+        iv: Array.from(iv),
+        encrypted: Array.from(new Uint8Array(encrypted))
+    });
+}
+
+// Add file input to chat UI
+function addFileInput() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = async (e) => {
+        if (e.target.files.length > 0) {
+            await sendFile(e.target.files[0]);
+        }
+    };
+    document.getElementById('sendChatDiv').appendChild(input);
+}
+
 // Open or reopen chat connection
 function openChatConnection(meetingId) {
     if (chatConn) chatConn.close();
@@ -71,7 +178,7 @@ function openChatConnection(meetingId) {
 
     chatConn.on('open', () => {
         chatActive = true;
-        chatConn.on('data', addReceivedMessage);
+        chatConn.on('data', handleChatData);
         chatConn.on('close', () => {
             chatActive = false;
             reconnectInterval = setInterval(() => {
@@ -82,18 +189,8 @@ function openChatConnection(meetingId) {
                 }
             }, 5000);
         });
+        addFileInput();
     });
-}
-
-// Send chat message
-function sendMessage() {
-    if (!chatActive) return;
-
-    const messageInput = document.getElementById('message');
-    const messageText = messageInput.value;
-    messageInput.value = '';
-    addSentMessage(messageText);
-    chatConn.send(messageText);
 }
 
 // Display received message
