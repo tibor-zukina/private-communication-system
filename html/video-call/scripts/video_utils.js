@@ -121,7 +121,7 @@ function enableFullscreen(video) {
         showFullscreen = document.createElement("img");
         showFullscreen.id = "showFullscreen";
         showFullscreen.className = "fullscreenWidget";
-        showFullscreen.src = 'video-call/images/fullscreen.png';
+        showFullscreen.src = '/video-call/images/fullscreen.png';
 
         video.parentNode.onmouseover = () => {
             showFullscreen.style.display = 'inline-block';
