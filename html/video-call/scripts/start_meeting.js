@@ -11,6 +11,7 @@ var lastCallTime;
 var callPeerConnection;
 var host = '64.176.216.148';
 var peer;
+var peerId;
 
 function makeRandomId(length) {
     var result = '';
@@ -23,7 +24,7 @@ function makeRandomId(length) {
 }
 
 function setUpPeer(peerServerPath, peerServerKey) {
-    var peerId = makeRandomId(32);
+    peerId = makeRandomId(32);
 
     peer = new Peer(peerId, {
         host: host,
