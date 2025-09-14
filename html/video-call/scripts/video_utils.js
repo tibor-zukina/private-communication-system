@@ -3,7 +3,7 @@ var capturingDisplay = false;
 var recordingMode;
 var localStream;
 var toggleStream;
-var deviceIds = [];
+var videoDeviceIds = [];
 var currentIndex = 0;
 
 function toggleRecordingMode() {
@@ -44,11 +44,11 @@ function gotDevices(deviceInfos) {
     for (let i = 0; i < deviceInfos.length; i++) {
         const deviceInfo = deviceInfos[i];
         if (deviceInfo.kind === 'videoinput') {
-            deviceIds.push(deviceInfo.deviceId);
+            videoDeviceIds.push(deviceInfo.deviceId);
         }
     }
 
-    if (deviceIds.length === 0) return;
+    if (videoDeviceIds.length === 0) return;
     currentIndex = 0;
     getVideo(false);
 }
@@ -61,8 +61,8 @@ function getVideo(toggle) {
         height: { min: 480, max: 960 }
     };
 
-    if (deviceIds[currentIndex]) {
-        videoConstraints.deviceId = { exact: deviceIds[currentIndex] };
+    if (videoDeviceIds[currentIndex]) {
+        videoConstraints.deviceId = { exact: videoDeviceIds[currentIndex] };
     }
 
     const constraints = {

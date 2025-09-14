@@ -1,7 +1,7 @@
 const host = '64.176.216.148';
 let peer;
 let peerId;
-let deviceIds = [];
+let meetingDeviceIds = [];
 let localStream;
 let chatConn;
 let callerPeerId;
@@ -141,11 +141,11 @@ function getUserMediaSuccess(capturedStream) {
 function gotDevices(deviceInfos) {
     if (!deviceInfos.length) return;
 
-    deviceIds = deviceInfos
+    meetingDeviceIds = deviceInfos
         .filter(info => info.kind === 'videoinput')
         .map(info => info.deviceId);
 
-    if (!deviceIds.length) return;
+    if (!meetingDeviceIds.length) return;
 
     getVideo(false);
 }

@@ -1,5 +1,5 @@
 const host = '64.176.216.148';
-let deviceIds = [];
+let meetingDeviceIds = [];
 let meetingId;
 let chatConn = null;
 let chatStarted = false;
@@ -167,11 +167,11 @@ function setTimer(seconds, element) {
 
 // Device enumeration handler
 function gotDevices(deviceInfos) {
-    deviceIds = deviceInfos
+    meetingDeviceIds = deviceInfos
         .filter(info => info.kind === 'videoinput')
         .map(info => info.deviceId);
 
-    if (deviceIds.length > 0) {
+    if (meetingDeviceIds.length > 0) {
         getVideo(false);
     }
 }
