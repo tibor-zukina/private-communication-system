@@ -4,7 +4,7 @@
     "concurrent_limit": 100
   },
   "ssl": {
-    "key": "/etc/letsencrypt/live/management.perpetuumit.com/privkey.pem",
-    "cert": "/etc/letsencrypt/live/management.perpetuumit.com/cert.pem"
+    "key": "/etc/ssl/selfsigned/selfsigned.key",
+    "cert": "/etc/ssl/selfsigned/selfsigned.crt"
   }
 }
