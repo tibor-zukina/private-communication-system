@@ -9,7 +9,7 @@ var startTime = 0;
 var previousState = 'not started';
 var lastCallTime;
 var callPeerConnection;
-var host = 'management.cumnsee.com';
+var host = '64.176.216.148';
 var peer;
 
 function makeRandomId(length) {
@@ -37,7 +37,8 @@ function setUpPeer(peerServerPath, peerServerKey) {
     });
 }
 
-setUpPeer(window.queryParams['path'], window.queryParams['key']);
+var params = new URLSearchParams(window.location.search);
+setUpPeer(params.get('path'), params.get('key'));
 
 function startMeeting() {
     callButton = document.getElementsByClassName('callButton')[0];
