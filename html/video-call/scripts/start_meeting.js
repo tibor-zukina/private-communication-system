@@ -16,6 +16,9 @@ let callPeerConnection;
 let meetingKey; // CryptoKey for AES-GCM
 let meetingKeyRaw; // ArrayBuffer for export/import
 
+// Buffer for messages/files received before key is ready
+let pendingEncryptedMessages = [];
+
 // Utility to generate a secure random ID
 function makeRandomId(length) {
     const characters = 'ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789';
@@ -48,22 +51,26 @@ setUpPeer(params.get('path'), params.get('key'));
 
 // Start meeting process
 async function startMeeting() {
-    await generateMeetingKey();
-
     const callButton = document.querySelector('.callButton');
     callButton.disabled = true;
     callButton.value = 'Meeting started';
     navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(enumerationErrorHandler);
 }
 
-// Generate AES-GCM key on meeting start
-async function generateMeetingKey() {
-    meetingKey = await window.crypto.subtle.generateKey(
-        { name: "AES-GCM", length: 256 },
+// Import AES-GCM key from raw bytes and update key if received again
+async function importMeetingKey(rawBytes) {
+    meetingKey = await window.crypto.subtle.importKey(
+        "raw",
+        new Uint8Array(rawBytes),
+        { name: "AES-GCM" },
         true,
         ["encrypt", "decrypt"]
     );
-    meetingKeyRaw = await window.crypto.subtle.exportKey("raw", meetingKey);
+    // Reprocess any pending messages with the new key
+    for (const data of pendingEncryptedMessages) {
+        await handleChatData(data);
+    }
+    pendingEncryptedMessages = [];
 }
 
 // Set up chat after PeerJS call connects
@@ -74,7 +81,6 @@ function startChat() {
         chatConn = conn;
         chatConn.on('data', handleChatData);
         chatConn.on('close', () => {});
-        sendMeetingKey();
         addFileInput(); // Ensure file input is present after chat connection
     });
 
@@ -85,13 +91,6 @@ function startChat() {
             sendMessage();
         }
     };
-}
-
-// Send key to peer via chatConn
-function sendMeetingKey() {
-    if (chatConn && meetingKeyRaw) {
-        chatConn.send({ type: "meeting-key", key: Array.from(new Uint8Array(meetingKeyRaw)) });
-    }
 }
 
 // Encrypt and send chat message
@@ -122,7 +121,14 @@ async function sendMessage() {
 
 // Handle incoming chat data (for file and key)
 async function handleChatData(data) {
-    if (typeof data === "object" && data.type === "file") {
+    if (typeof data === "object" && data.type === "meeting-key") {
+        // Always update the key if received
+        await importMeetingKey(data.key);
+    } else if (typeof data === "object" && data.type === "file") {
+        if (!meetingKey) {
+            pendingEncryptedMessages.push(data);
+            return;
+        }
         // Decrypt file
         const iv = new Uint8Array(data.iv);
         const encrypted = new Uint8Array(data.encrypted);
@@ -134,9 +140,11 @@ async function handleChatData(data) {
         const blob = new Blob([decrypted], { type: data.mime });
         const url = URL.createObjectURL(blob);
         addReceivedMessage(`<a href="${url}" download="${data.name}">Download ${data.name}</a>`);
-    } else if (typeof data === "object" && data.type === "meeting-key") {
-        // Ignore, only sender generates key
     } else if (typeof data === "object" && data.type === "chat") {
+        if (!meetingKey) {
+            pendingEncryptedMessages.push(data);
+            return;
+        }
         // Decrypt chat message
         const iv = new Uint8Array(data.iv);
         const encrypted = new Uint8Array(data.encrypted);
