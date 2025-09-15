@@ -335,6 +335,11 @@ function getUserMediaSuccess(capturedStream) {
 
     meetingLocalStream = makeCallStream(capturedStream);
 
+    // Initialize mute control
+    window.initMuteControl(meetingLocalStream);
+    const micImg = document.getElementById('micToggle');
+    if (micImg) micImg.className = 'micWidget';
+
     peer.on('call', (call) => {
         lastCallTime = Date.now();
         call.timeStarted = lastCallTime;

@@ -3,6 +3,8 @@ var capturingDisplay = false;
 var recordingMode = 'video';
 var videoDeviceIds = [];
 var currentIndex = 0;
+var currentAudioTrack = null;
+var micMuted = false;
 
 function toggleRecordingMode() {
     if (recordingMode === 'video') {
@@ -143,3 +145,40 @@ function enableFullscreen(video) {
         return false;
     };
 }
+
+// Call this after local stream is available
+function initMuteControl(localStream) {
+    currentAudioTrack = null;
+    if (localStream && localStream.getAudioTracks().length > 0) {
+        currentAudioTrack = localStream.getAudioTracks()[0];
+    }
+    micMuted = false;
+    const micImg = document.getElementById('micToggle');
+    if (micImg) {
+        micImg.src = '/video-call/images/microphone.png';
+        micImg.className = 'micWidget';
+        micImg.style.display = '';
+        micImg.onclick = toggleMute;
+        micImg.title = 'Mute microphone';
+    }
+}
+
+// Toggle mute/unmute
+function toggleMute() {
+    if (!currentAudioTrack) return;
+    micMuted = !micMuted;
+    currentAudioTrack.enabled = !micMuted;
+    const micImg = document.getElementById('micToggle');
+    if (micImg) {
+        if (micMuted) {
+            micImg.src = '/video-call/images/microphone_muted.png';
+            micImg.title = 'Unmute microphone';
+        } else {
+            micImg.src = '/video-call/images/microphone.png';
+            micImg.title = 'Mute microphone';
+        }
+    }
+}
+
+window.initMuteControl = initMuteControl;
+window.toggleMute = toggleMute;
