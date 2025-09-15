@@ -12,6 +12,8 @@ let previousState = 'not started';
 let lastCallTime;
 let callPeerConnection;
 const FILE_CHUNK_SIZE = 16000; // 16KB
+let outgoingFileId = 0;
+let incomingFiles = {};
 
 // Crypto
 let meetingKey; // CryptoKey for AES-GCM
