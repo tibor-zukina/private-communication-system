@@ -263,3 +263,7 @@ span {
     color: #ed62b5;
     text-decoration: underline;
 }
+
+#filePreviewDiv {
+    margin-top:8px;
+}
