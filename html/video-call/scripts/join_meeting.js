@@ -114,11 +114,13 @@ function showFilePreview(file) {
 }
 
 function updateFileUploadProgress(current, total) {
+    const sentKB = Math.round(current * FILE_CHUNK_SIZE / 1024);
+    const totalKB = Math.round(total * FILE_CHUNK_SIZE / 1024);
     const percent = Math.floor((current / total) * 100);
     const bar = document.getElementById('fileUploadProgressBar');
     const text = document.getElementById('fileUploadProgressText');
     if (bar) bar.style.width = percent + '%';
-    if (text) text.textContent = `Uploading... ${percent}% (${current}/${total})`;
+    if (text) text.textContent = `Uploading... ${percent}% (${sentKB} KB / ${totalKB} KB)`;
 }
 
 // Encrypt and send chat message
