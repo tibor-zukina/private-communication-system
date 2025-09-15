@@ -267,3 +267,17 @@ span {
 #filePreviewDiv {
     margin-top:8px;
 }
+
+.micWidget {
+    width: 32px;
+    height: auto;
+    margin-left: 8px;
+    margin-top: 8px;
+    vertical-align: middle;
+    cursor: pointer;
+    filter: brightness(100%);
+    transition: filter 0.2s;
+}
+.micWidget:hover {
+    filter: brightness(75%);
+}

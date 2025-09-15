@@ -20,6 +20,7 @@
 </div>
 <div>
 <input type="button" id="toggleButton" class="callButton invisibleButton" onClick="toggleRecordingMode();" value="Share screen"/>
+<img id="micToggle" src="/video-call/images/microphone.png" class="micWidget invisibleButton" alt="Mute/unmute microphone" title="Mute/unmute microphone" />
 </div>
 </div>
 
