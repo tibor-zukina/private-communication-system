@@ -60,6 +60,8 @@ function joinMeeting() {
 }
 
 // Start peer data channel chat
+let selectedFile = null;
+
 function startChat(meetingId) {
     chatStarted = true;
     openChatConnection(meetingId);
@@ -72,14 +74,75 @@ function startChat(meetingId) {
         }
     };
 
-    // File sending logic: always present, only works after chatActive
-    document.getElementById('fileInput').onchange = async (e) => {
+    // File selection preview logic
+    document.getElementById('fileInput').onchange = (e) => {
         if (!chatActive || !meetingKey) return;
         if (e.target.files.length > 0) {
-            await sendFile(e.target.files[0]);
-            e.target.value = ""; // reset input
+            selectedFile = e.target.files[0];
+            showFilePreview(selectedFile);
         }
     };
+}
+
+// Show file preview and send/cancel buttons
+function showFilePreview(file) {
+    const previewDiv = document.getElementById('filePreviewDiv');
+    let fileInfo = `<span style="color:#bfbfbf;">Selected file: ${file.name} (${Math.round(file.size/1024)} KB)</span>`;
+    let sendBtn = `<button id="sendFileBtn" class="callButton" style="margin-left:8px;">Send</button>`;
+    let cancelBtn = `<button id="cancelFileBtn" class="callButton" style="margin-left:8px;background:#515151;">Cancel</button>`;
+    previewDiv.innerHTML = fileInfo + sendBtn + cancelBtn;
+
+    document.getElementById('sendFileBtn').onclick = async () => {
+        await sendFile(selectedFile);
+        clearFilePreview();
+    };
+    document.getElementById('cancelFileBtn').onclick = () => {
+        clearFilePreview();
+    };
+}
+
+// Clear file preview and reset input
+function clearFilePreview() {
+    selectedFile = null;
+    document.getElementById('filePreviewDiv').innerHTML = '';
+    document.getElementById('fileInput').value = '';
+}
+
+// Encrypt and send chat message
+async function sendMessage() {
+    if (!chatActive || !meetingKey) return;
+
+    const messageInput = document.getElementById('message');
+    const messageText = messageInput.value.trim();
+    messageInput.value = '';
+
+    // Prevent sending empty message if no file is selected
+    if (!messageText && !selectedFile) return;
+
+    if (messageText) {
+        // Encrypt message
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const encoder = new TextEncoder();
+        const encrypted = await window.crypto.subtle.encrypt(
+            { name: "AES-GCM", iv },
+            meetingKey,
+            encoder.encode(messageText)
+        );
+
+        chatConn.send({
+            type: "chat",
+            iv: Array.from(iv),
+            encrypted: Array.from(new Uint8Array(encrypted))
+        });
+
+        addSentMessage(messageText);
+    }
+
+    // If file is selected, send it
+    if (selectedFile) {
+        await sendFile(selectedFile);
+        clearFilePreview();
+    }
 }
 
 // Generate AES-GCM key on join
@@ -187,35 +250,6 @@ async function handleChatData(data) {
     } else {
         addReceivedMessage(data);
     }
-}
-
-// Encrypt and send chat message
-async function sendMessage() {
-    if (!chatActive || !meetingKey) return;
-
-    const messageInput = document.getElementById('message');
-    const messageText = messageInput.value.trim();
-    messageInput.value = '';
-
-    // Prevent sending empty message if no file is selected
-    if (!messageText) return;
-
-    // Encrypt message
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-    const encoder = new TextEncoder();
-    const encrypted = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
-        meetingKey,
-        encoder.encode(messageText)
-    );
-
-    chatConn.send({
-        type: "chat",
-        iv: Array.from(iv),
-        encrypted: Array.from(new Uint8Array(encrypted))
-    });
-
-    addSentMessage(messageText);
 }
 
 // Encrypt and send file in chunks

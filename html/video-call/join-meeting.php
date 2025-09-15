@@ -32,6 +32,7 @@
     <img src="/video-call/images/file_gray.png" class="streamingSendWidget" alt="Send file" id="sendFile" draggable="false" style="cursor:pointer;">
 </label>
 <input type="file" id="fileInput" style="display:none" />
+<div id="filePreviewDiv" style="margin-top:8px;"></div>
 </div>
 </div>
 </div>
