@@ -67,6 +67,15 @@ function startChat(meetingId) {
             sendMessage();
         }
     };
+
+    // File sending logic: always present, only works after chatActive
+    document.getElementById('fileInput').onchange = async (e) => {
+        if (!chatActive || !meetingKey) return;
+        if (e.target.files.length > 0) {
+            await sendFile(e.target.files[0]);
+            e.target.value = ""; // reset input
+        }
+    };
 }
 
 // Generate AES-GCM key on join
@@ -130,7 +139,7 @@ async function handleChatData(data) {
             );
             const blob = new Blob([decrypted], { type: data.mime });
             const url = URL.createObjectURL(blob);
-            addReceivedMessage(`<a href="${url}" download="${data.name}">Download ${data.name}</a>`);
+            addReceivedMessage(`<a href="${url}" download="${data.name}" class="chatFileLink">Attachment: ${data.name}</a>`);
         } else if (data.type === "chat") {
             const iv = new Uint8Array(data.iv);
             const encrypted = new Uint8Array(data.encrypted);
@@ -152,8 +161,11 @@ async function sendMessage() {
     if (!chatActive || !meetingKey) return;
 
     const messageInput = document.getElementById('message');
-    const messageText = messageInput.value;
+    const messageText = messageInput.value.trim();
     messageInput.value = '';
+
+    // Prevent sending empty message if no file is selected
+    if (!messageText) return;
 
     // Encrypt message
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
@@ -193,6 +205,11 @@ async function sendFile(file) {
         iv: Array.from(iv),
         encrypted: Array.from(new Uint8Array(encrypted))
     });
+
+    // Show sent file as a download link in the chat
+    const sentBlob = new Blob([fileBuffer], { type: file.type });
+    const sentUrl = URL.createObjectURL(sentBlob);
+    addSentMessage(`<a href="${sentUrl}" download="${file.name}" class="chatFileLink">Attachment: ${file.name}</a>`);
 }
 
 // Display received message
@@ -298,18 +315,6 @@ function connectionLost() {
 }
 
 // Toggle button visibility
-function enableToggle() {
-    const toggleButton = document.getElementById('toggleButton');
-    toggleButton.className = 'callButton';
-}
-
-// Remove addFileInput and update file sending logic:
-document.getElementById('fileInput').onchange = async (e) => {
-    if (!chatActive || !meetingKey) return;
-    if (e.target.files.length > 0) {
-        await sendFile(e.target.files[0]);
-    }
-};
 function enableToggle() {
     const toggleButton = document.getElementById('toggleButton');
     toggleButton.className = 'callButton';

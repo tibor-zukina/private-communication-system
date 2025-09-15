@@ -17,12 +17,6 @@ function addReceivedMessage(text) {
     chatContentDiv.scrollTop = chatContentDiv.scrollHeight;
 }
 
-// General message processing (no encryption)
-function processReceivedFile(blob, name, mime) {
-    const url = URL.createObjectURL(blob);
-    addReceivedMessage(`<a href="${url}" download="${name}">Download ${name}</a>`);
-}
-
 // General message sending (no encryption)
 function sendFileMessage(chatConn, file, callback) {
     const reader = new FileReader();

@@ -252,3 +252,14 @@ span {
   border: none;
   border-radius: 50%;
 }
+
+.chatFileLink {
+    color: #bfbfbf;
+    text-decoration: none;
+    border-bottom: 1px dotted #bfbfbf;
+    padding: 2px 0;
+}
+.chatFileLink:hover {
+    color: #ed62b5;
+    text-decoration: underline;
+}

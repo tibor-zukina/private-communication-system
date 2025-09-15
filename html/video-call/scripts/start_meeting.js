@@ -91,11 +91,12 @@ function startChat() {
         }
     };
 
-    // Remove addFileInput and update file sending logic:
+    // File sending logic: always present, only works after chatStarted
     document.getElementById('fileInput').onchange = async (e) => {
         if (!chatStarted || !meetingKey) return;
         if (e.target.files.length > 0) {
             await sendFile(e.target.files[0]);
+            e.target.value = ""; // reset input
         }
     };
 }
@@ -105,8 +106,11 @@ async function sendMessage() {
     if (!chatStarted || !meetingKey) return;
 
     const messageBox = document.getElementById('message');
-    const messageText = messageBox.value;
+    const messageText = messageBox.value.trim();
     messageBox.value = '';
+
+    // Prevent sending empty message if no file is selected
+    if (!messageText) return;
 
     // Encrypt message
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
@@ -146,7 +150,7 @@ async function handleChatData(data) {
         );
         const blob = new Blob([decrypted], { type: data.mime });
         const url = URL.createObjectURL(blob);
-        addReceivedMessage(`<a href="${url}" download="${data.name}">Download ${data.name}</a>`);
+        addReceivedMessage(`<a href="${url}" download="${data.name}" class="chatFileLink">Attachment: ${data.name}</a>`);
     } else if (typeof data === "object" && data.type === "chat") {
         if (!meetingKey) {
             pendingEncryptedMessages.push(data);
@@ -183,6 +187,11 @@ async function sendFile(file) {
         iv: Array.from(iv),
         encrypted: Array.from(new Uint8Array(encrypted))
     });
+
+    // Show sent file as a download link in the chat
+    const sentBlob = new Blob([fileBuffer], { type: file.type });
+    const sentUrl = URL.createObjectURL(sentBlob);
+    addSentMessage(`<a href="${sentUrl}" download="${file.name}" class="chatFileLink">Attachment: ${file.name}</a>`);
 }
 
 // Media capture success handler
