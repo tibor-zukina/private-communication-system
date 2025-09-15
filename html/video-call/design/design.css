@@ -55,9 +55,9 @@ input[type=email]:focus {
 }
 
 textArea {
-    width: 100%;
+    width: 80%;
     box-sizing: border-box;    
-    max-width: 90%;
+    max-width: 80%;
     font-size: 0.9em;
     font-family: "Arial", "Helvetica", sans-serif;
     padding: 8px 16px;
@@ -251,4 +251,15 @@ span {
   background-color: rgba(61,61,61,0.3);
   border: none;
   border-radius: 50%;
+}
+
+.chatFileLink {
+    color: #bfbfbf;
+    text-decoration: none;
+    border-bottom: 1px dotted #bfbfbf;
+    padding: 2px 0;
+}
+.chatFileLink:hover {
+    color: #ed62b5;
+    text-decoration: underline;
 }

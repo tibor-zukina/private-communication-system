@@ -11,6 +11,16 @@ let startTime = 0;
 let previousState = 'not started';
 let lastCallTime;
 let callPeerConnection;
+const FILE_CHUNK_SIZE = 4096; // 4KB
+let outgoingFileId = 0;
+let incomingFiles = {};
+
+// Crypto
+let meetingKey; // CryptoKey for AES-GCM
+let meetingKeyRaw; // ArrayBuffer for export/import
+
+// Buffer for messages/files received before key is ready
+let pendingEncryptedMessages = [];
 
 // Utility to generate a secure random ID
 function makeRandomId(length) {
@@ -43,11 +53,27 @@ const params = new URLSearchParams(window.location.search);
 setUpPeer(params.get('path'), params.get('key'));
 
 // Start meeting process
-function startMeeting() {
+async function startMeeting() {
     const callButton = document.querySelector('.callButton');
     callButton.disabled = true;
     callButton.value = 'Meeting started';
     navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(enumerationErrorHandler);
+}
+
+// Import AES-GCM key from raw bytes and update key if received again
+async function importMeetingKey(rawBytes) {
+    meetingKey = await window.crypto.subtle.importKey(
+        "raw",
+        new Uint8Array(rawBytes),
+        { name: "AES-GCM" },
+        true,
+        ["encrypt", "decrypt"]
+    );
+    // Reprocess any pending messages with the new key
+    for (const data of pendingEncryptedMessages) {
+        await handleChatData(data);
+    }
+    pendingEncryptedMessages = [];
 }
 
 // Set up chat after PeerJS call connects
@@ -56,7 +82,7 @@ function startChat() {
 
     peer.on('connection', (conn) => {
         chatConn = conn;
-        chatConn.on('data', addReceivedMessage);
+        chatConn.on('data', handleChatData);
         chatConn.on('close', () => {});
     });
 
@@ -67,43 +93,184 @@ function startChat() {
             sendMessage();
         }
     };
+
+    // File sending logic: always present, only works after chatStarted
+    document.getElementById('fileInput').onchange = async (e) => {
+        if (!chatStarted || !meetingKey) return;
+        if (e.target.files.length > 0) {
+            await sendFile(e.target.files[0]);
+            e.target.value = ""; // reset input
+        }
+    };
 }
 
-// Send message through PeerJS DataChannel
-function sendMessage() {
-    if (!chatStarted) return;
+// Encrypt and send chat message
+async function sendMessage() {
+    if (!chatStarted || !meetingKey) return;
 
     const messageBox = document.getElementById('message');
-    const messageText = messageBox.value;
+    const messageText = messageBox.value.trim();
     messageBox.value = '';
+
+    // Prevent sending empty message if no file is selected
+    if (!messageText) return;
+
+    // Encrypt message
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    const encoder = new TextEncoder();
+    const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        meetingKey,
+        encoder.encode(messageText)
+    );
+
+    chatConn.send({
+        type: "chat",
+        iv: Array.from(iv),
+        encrypted: Array.from(new Uint8Array(encrypted))
+    });
+
     addSentMessage(messageText);
-    chatConn.send(messageText);
 }
 
-// UI: Add received chat message
-function addReceivedMessage(text) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'receivedMessageDiv';
-    messageDiv.innerHTML = `<div class="receivedMessageText"><div class="chatTextDiv"><span class="chatTextDiv">${text}</span></div></div>`;
-    const chatContentDiv = document.getElementById('chatContentDiv');
-    chatContentDiv.appendChild(messageDiv);
-    chatContentDiv.scrollTop = chatContentDiv.scrollHeight;
+// Handle incoming chat data (for file and key)
+async function handleChatData(data) {
+    if (typeof data === "object" && data.type === "meeting-key") {
+        // Always update the key if received
+        await importMeetingKey(data.key);
+    } else if (typeof data === "object" && data.type === "file") {
+        if (!meetingKey) {
+            pendingEncryptedMessages.push(data);
+            return;
+        }
+        // Decrypt file
+        const iv = new Uint8Array(data.iv);
+        const encrypted = new Uint8Array(data.encrypted);
+        const decrypted = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv },
+            meetingKey,
+            encrypted
+        );
+        const blob = new Blob([decrypted], { type: data.mime });
+        const url = URL.createObjectURL(blob);
+        addReceivedMessage(`<a href="${url}" download="${data.name}" class="chatFileLink">Attachment: ${data.name}</a>`);
+    } else if (typeof data === "object" && data.type === "chat") {
+        if (!meetingKey) {
+            pendingEncryptedMessages.push(data);
+            return;
+        }
+        // Decrypt chat message
+        const iv = new Uint8Array(data.iv);
+        const encrypted = new Uint8Array(data.encrypted);
+        const decrypted = await window.crypto.subtle.decrypt(
+            { name: "AES-GCM", iv },
+            meetingKey,
+            encrypted
+        );
+        const decoder = new TextDecoder();
+        addReceivedMessage(decoder.decode(decrypted));
+    } else if (typeof data === "object" && data.type === "file-chunk") {
+        const key = data.fileId;
+        if (!incomingFiles[key]) {
+            incomingFiles[key] = { chunks: [], totalChunks: data.totalChunks, name: data.name, mime: data.mime, iv: data.iv, received: 0 };
+        }
+        incomingFiles[key].chunks[data.chunkIndex] = new Uint8Array(data.data);
+        incomingFiles[key].received++;
+    } else if (typeof data === "object" && data.type === "file-done") {
+        const key = data.fileId;
+        const fileInfo = incomingFiles[key];
+        if (fileInfo && fileInfo.received === fileInfo.totalChunks) {
+            // Concatenate chunks
+            const encryptedArr = new Uint8Array(fileInfo.chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+            let offset = 0;
+            for (const chunk of fileInfo.chunks) {
+                encryptedArr.set(chunk, offset);
+                offset += chunk.length;
+            }
+            // Decrypt
+            const decrypted = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: new Uint8Array(fileInfo.iv) },
+                meetingKey,
+                encryptedArr
+            );
+            const blob = new Blob([decrypted], { type: fileInfo.mime });
+            const url = URL.createObjectURL(blob);
+            addReceivedMessage(`<a href="${url}" download="${fileInfo.name}" class="chatFileLink">Attachment: ${fileInfo.name}</a>`);
+            delete incomingFiles[key];
+        }
+    } else {
+        addReceivedMessage(data);
+    }
 }
 
-// UI: Add sent chat message
-function addSentMessage(text) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'sentMessageDiv';
-    messageDiv.innerHTML = `<div class="sentMessageText"><div class="chatTextDiv"><span class="chatTextDiv">${text}</span></div></div>`;
-    const chatContentDiv = document.getElementById('chatContentDiv');
-    chatContentDiv.appendChild(messageDiv);
-    chatContentDiv.scrollTop = chatContentDiv.scrollHeight;
+// Encrypt and send file in chunks
+async function sendFile(file) {
+    if (!chatStarted || !meetingKey) return;
+    const iv = window.crypto.getRandomValues(new Uint8Array(12)); // Generate IV once per file
+    const fileBuffer = await file.arrayBuffer();
+    const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        meetingKey,
+        fileBuffer
+    );
+    const encryptedArr = new Uint8Array(encrypted);
+    const totalChunks = Math.ceil(encryptedArr.length / FILE_CHUNK_SIZE);
+    const fileId = ++outgoingFileId;
+
+    for (let i = 0; i < totalChunks; i++) {
+        const chunk = encryptedArr.slice(i * FILE_CHUNK_SIZE, (i + 1) * FILE_CHUNK_SIZE);
+        chatConn.send({
+            type: "file-chunk",
+            fileId,
+            name: file.name,
+            mime: file.type,
+            chunkIndex: i,
+            totalChunks,
+            iv: Array.from(iv), // Send the same IV for all chunks
+            data: Array.from(chunk)
+        });
+    }
+    chatConn.send({
+        type: "file-done",
+        fileId,
+        name: file.name,
+        mime: file.type,
+        totalChunks,
+        iv: Array.from(iv) // Send IV with done message
+    });
+
+    // Show sent file as a download link in the chat (local, unencrypted)
+    const sentBlob = new Blob([fileBuffer], { type: file.type });
+    const sentUrl = URL.createObjectURL(sentBlob);
+    addSentMessage(`<a href="${sentUrl}" download="${file.name}" class="chatFileLink">Attachment: ${file.name}</a>`);
 }
 
 // Media capture success handler
 function getUserMediaSuccess(capturedStream) {
     document.getElementById('meetingStatus').innerHTML = 'Waiting for the other side to join...';
-    document.getElementById('invitationUrl').innerHTML = `Invitation url: https://${host}/video-call/join-meeting.php?path=${params.get('path')}&key=${params.get('key')}&id=${peerId}`;
+
+    // Generate invitation URL
+    const invitationUrl = `https://${host}/video-call/join-meeting.php?path=${params.get('path')}&key=${params.get('key')}&id=${peerId}`;
+    const invitationElem = document.getElementById('invitationUrl');
+    invitationElem.innerHTML = `<span id="copyInvitationLink" style="cursor:pointer;text-decoration:underline;">Copy invitation link</span>`;
+
+    document.getElementById('copyInvitationLink').onclick = () => {
+        navigator.clipboard.writeText(invitationUrl).then(() => {
+            invitationElem.innerHTML = `<span style="color:#ed62b5;">Link copied!</span>`;
+            setTimeout(() => {
+                invitationElem.innerHTML = `<span id="copyInvitationLink" style="cursor:pointer;text-decoration:underline;">Copy invitation link</span>`;
+                document.getElementById('copyInvitationLink').onclick = () => {
+                    navigator.clipboard.writeText(invitationUrl).then(() => {
+                        invitationElem.innerHTML = `<span style="color:#ed62b5;">Link copied!</span>`;
+                        setTimeout(() => {
+                            invitationElem.innerHTML = `<span id="copyInvitationLink" style="cursor:pointer;text-decoration:underline;">Copy invitation link</span>`;
+                            document.getElementById('copyInvitationLink').onclick = arguments.callee;
+                        }, 1200);
+                    });
+                };
+            }, 1200);
+        });
+    };
 
     meetingLocalStream = makeCallStream(capturedStream);
 
