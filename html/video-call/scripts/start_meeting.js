@@ -166,29 +166,75 @@ async function handleChatData(data) {
         );
         const decoder = new TextDecoder();
         addReceivedMessage(decoder.decode(decrypted));
+    } else if (typeof data === "object" && data.type === "file-chunk") {
+        const key = data.fileId;
+        if (!incomingFiles[key]) {
+            incomingFiles[key] = { chunks: [], totalChunks: data.totalChunks, name: data.name, mime: data.mime, iv: data.iv, received: 0 };
+        }
+        incomingFiles[key].chunks[data.chunkIndex] = new Uint8Array(data.data);
+        incomingFiles[key].received++;
+    } else if (typeof data === "object" && data.type === "file-done") {
+        const key = data.fileId;
+        const fileInfo = incomingFiles[key];
+        if (fileInfo && fileInfo.received === fileInfo.totalChunks) {
+            // Concatenate chunks
+            const encryptedArr = new Uint8Array(fileInfo.chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+            let offset = 0;
+            for (const chunk of fileInfo.chunks) {
+                encryptedArr.set(chunk, offset);
+                offset += chunk.length;
+            }
+            // Decrypt
+            const decrypted = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: new Uint8Array(fileInfo.iv) },
+                meetingKey,
+                encryptedArr
+            );
+            const blob = new Blob([decrypted], { type: fileInfo.mime });
+            const url = URL.createObjectURL(blob);
+            addReceivedMessage(`<a href="${url}" download="${fileInfo.name}" class="chatFileLink">Attachment: ${fileInfo.name}</a>`);
+            delete incomingFiles[key];
+        }
     } else {
         addReceivedMessage(data);
     }
 }
 
-// Encrypt and send file
+// Encrypt and send file in chunks
 async function sendFile(file) {
-    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+    if (!chatStarted || !meetingKey) return;
     const fileBuffer = await file.arrayBuffer();
     const encrypted = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
+        { name: "AES-GCM", iv: window.crypto.getRandomValues(new Uint8Array(12)) },
         meetingKey,
         fileBuffer
     );
+    const encryptedArr = new Uint8Array(encrypted);
+    const totalChunks = Math.ceil(encryptedArr.length / FILE_CHUNK_SIZE);
+    const fileId = ++outgoingFileId;
+
+    for (let i = 0; i < totalChunks; i++) {
+        const chunk = encryptedArr.slice(i * FILE_CHUNK_SIZE, (i + 1) * FILE_CHUNK_SIZE);
+        chatConn.send({
+            type: "file-chunk",
+            fileId,
+            name: file.name,
+            mime: file.type,
+            chunkIndex: i,
+            totalChunks,
+            iv: Array.from(new Uint8Array(12)), // You may want to send the IV only once, or with each chunk
+            data: Array.from(chunk)
+        });
+    }
     chatConn.send({
-        type: "file",
+        type: "file-done",
+        fileId,
         name: file.name,
         mime: file.type,
-        iv: Array.from(iv),
-        encrypted: Array.from(new Uint8Array(encrypted))
+        totalChunks
     });
 
-    // Show sent file as a download link in the chat
+    // Show sent file as a download link in the chat (local, unencrypted)
     const sentBlob = new Blob([fileBuffer], { type: file.type });
     const sentUrl = URL.createObjectURL(sentBlob);
     addSentMessage(`<a href="${sentUrl}" download="${file.name}" class="chatFileLink">Attachment: ${file.name}</a>`);
