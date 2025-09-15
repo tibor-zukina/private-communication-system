@@ -11,6 +11,7 @@ let startTime = 0;
 let previousState = 'not started';
 let lastCallTime;
 let callPeerConnection;
+const FILE_CHUNK_SIZE = 16000; // 16KB
 
 // Crypto
 let meetingKey; // CryptoKey for AES-GCM
