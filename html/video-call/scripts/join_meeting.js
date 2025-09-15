@@ -17,7 +17,7 @@ let meetingKeyRaw; // ArrayBuffer for export/import
 // Buffer for messages/files received before key is ready
 let pendingEncryptedMessages = [];
 
-const FILE_CHUNK_SIZE = 16000; // 16KB
+const FILE_CHUNK_SIZE = 4096; // 4KB
 let outgoingFileId = 0;
 let incomingFiles = {};
 
@@ -224,9 +224,10 @@ async function sendFile(file) {
         addSentMessage("No key yet, can't send file.");
         return;
     }
+    const iv = window.crypto.getRandomValues(new Uint8Array(12)); // Generate IV once per file
     const fileBuffer = await file.arrayBuffer();
     const encrypted = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: window.crypto.getRandomValues(new Uint8Array(12)) },
+        { name: "AES-GCM", iv },
         meetingKey,
         fileBuffer
     );
@@ -243,7 +244,7 @@ async function sendFile(file) {
             mime: file.type,
             chunkIndex: i,
             totalChunks,
-            iv: Array.from(new Uint8Array(12)), // You may want to send the IV only once, or with each chunk
+            iv: Array.from(iv), // Send the same IV for all chunks
             data: Array.from(chunk)
         });
     }
@@ -252,7 +253,8 @@ async function sendFile(file) {
         fileId,
         name: file.name,
         mime: file.type,
-        totalChunks
+        totalChunks,
+        iv: Array.from(iv) // Send IV with done message
     });
 
     // Show sent file as a download link in the chat (local, unencrypted)
