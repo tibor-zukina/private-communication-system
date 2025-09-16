@@ -10,8 +10,9 @@
 <div id="streamDiv">
 <div class="localVideoDiv">
 <video autoplay id="localVideo" poster="/video-call/images/video_portrait.png"></video>
-<div class="micWidgetContainer">
-    <img id="micToggle" src="/video-call/images/microphone.png" class="micWidget invisibleButton" alt="Mute/unmute microphone" title="Mute/unmute microphone" style="margin-left:0;margin-top:8px;" />
+<div class="micCameraWidgetContainer">
+    <img id="cameraToggle" src="/video-call/images/camera_off.png" class="cameraWidget invisibleButton" alt="Enable/disable camera" title="Enable camera"/>
+    <img id="micToggle" src="/video-call/images/microphone.png" class="micWidget invisibleButton" alt="Mute/unmute microphone" title="Mute/unmute microphone"/>
 </div>
 </div>
 <div>
