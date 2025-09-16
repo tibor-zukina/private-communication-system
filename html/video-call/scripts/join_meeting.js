@@ -1,4 +1,4 @@
-const host = '64.176.216.148';
+const host = 'communication.perpetuumit.com';
 let meetingDeviceIds = [];
 let meetingId;
 let chatConn = null;

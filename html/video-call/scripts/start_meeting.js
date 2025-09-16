@@ -1,4 +1,4 @@
-const host = '64.176.216.148';
+const host = 'communication.perpetuumit.com';
 let peer;
 let peerId;
 let meetingDeviceIds = [];

@@ -3,7 +3,7 @@ body {
     padding: 0;
     background-color: #3d3d3d;
     background-repeat: repeat;
-    background-image: url(https://64.176.216.148/video-call/images/empty_background_pattern.jpg);
+    background-image: url(/video-call/images/empty_background_pattern.jpg);
 }
 
 ::-webkit-scrollbar {
