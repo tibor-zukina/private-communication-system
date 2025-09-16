@@ -546,6 +546,18 @@ function addSentMessage(text) {
 // Handle success from getUserMedia
 function getUserMediaSuccess(capturedStream) {
     meetingLocalStream = makeCallStream(capturedStream);
+
+    // Initialize mute/camera controls
+    window.initMuteControl(meetingLocalStream);
+    window.initCameraControl(meetingLocalStream);
+    const micImg = document.getElementById('micToggle');
+    if (micImg) micImg.className = 'micWidget';
+    const camImg = document.getElementById('cameraToggle');
+    if (camImg) camImg.className = 'cameraWidget';
+
+    // Ensure camera control is set for initial mode
+    window.updateCameraControlForMode();
+
     const call = peer.call(meetingId, meetingLocalStream);
 
     call.on('stream', (remoteStream) => {
