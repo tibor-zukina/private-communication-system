@@ -2,3 +2,4 @@ secrets.json
 node_modules
 html/.htpasswd
 html/video-call/dist
+html/video-call/index.html
