@@ -151,15 +151,16 @@ function initMuteControl(localStream) {
     currentAudioTrack = null;
     if (localStream && localStream.getAudioTracks().length > 0) {
         currentAudioTrack = localStream.getAudioTracks()[0];
+        currentAudioTrack.enabled = false; // Start muted
     }
-    micMuted = false;
+    micMuted = true;
     const micImg = document.getElementById('micToggle');
     if (micImg) {
-        micImg.src = '/video-call/images/microphone.png';
+        micImg.src = '/video-call/images/microphone_muted.png';
         micImg.className = 'micWidget';
         micImg.style.display = '';
         micImg.onclick = toggleMute;
-        micImg.title = 'Mute microphone';
+        micImg.title = 'Unmute microphone';
     }
 }
 
