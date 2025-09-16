@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /video-call/
+    
+    # Don't rewrite files or directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Rewrite start-meeting and join-meeting to index.html
+    RewriteRule ^(start-meeting|join-meeting)$ index.html [L]
+    
+    # Handle other routes for React Router
+    RewriteRule . index.html [L]
+</IfModule>

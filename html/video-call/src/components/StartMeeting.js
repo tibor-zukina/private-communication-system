@@ -1,0 +1,61 @@
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+
+export default function StartMeeting() {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Load required scripts
+    const scripts = [
+      '/video-call/scripts/peerjs.js',
+      '/video-call/scripts/video_utils.js',
+      '/video-call/scripts/chat_utils.js',
+      '/video-call/scripts/encryption_utils.js',
+      '/video-call/scripts/start_meeting.js'
+    ];
+
+    scripts.forEach(src => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = false;
+      document.body.appendChild(script);
+    });
+  }, []);
+
+  return (
+    <div id="section">
+      <div id="streamDiv">
+        <div className="localVideoDiv">
+          <video autoPlay id="localVideo" poster="/video-call/images/video_portrait.png"></video>
+          <div className="micCameraWidgetContainer">
+            <img id="cameraToggle" src="/video-call/images/camera_off.png" className="cameraWidget invisibleButton" alt="Enable/disable camera" title="Enable camera"/>
+            <img id="micToggle" src="/video-call/images/microphone.png" className="micWidget invisibleButton" alt="Mute/unmute microphone" title="Mute/unmute microphone"/>
+          </div>
+        </div>
+        <div>
+          <input type="button" className="callButton invisibleButton" onClick={() => window.startMeeting()} value="Start meeting"/>
+        </div>
+        <div>
+          <span id="meetingStatus"></span>
+          <span id="invitationUrl"></span>
+        </div>
+        <div>
+          <input type="button" id="toggleButton" className="callButton invisibleButton" onClick={() => window.toggleRecordingMode()} value="Share screen"/>
+        </div>
+      </div>
+
+      <div id="chatDiv">
+        <div id="chatContentDiv"></div>
+        <div id="sendChatDiv">
+          <textarea rows="3" maxLength="500" id="message" className="streamingChatInput" placeholder="Type message here"></textarea>
+          <img src="/video-call/images/send_gray.png" onClick={() => window.sendMessage()} className="streamingSendWidget" alt="Send message" id="sendMessage" draggable="false" />
+          <label htmlFor="fileInput">
+            <img src="/video-call/images/file_gray.png" className="streamingSendWidget" alt="Send file" id="sendFile" draggable="false" style={{ cursor: 'pointer' }} />
+          </label>
+          <input type="file" id="fileInput" style={{ display: 'none' }} />
+          <div id="filePreviewDiv"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
