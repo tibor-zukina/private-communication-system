@@ -5,6 +5,8 @@ var videoDeviceIds = [];
 var currentIndex = 0;
 var currentAudioTrack = null;
 var micMuted = false;
+var currentVideoTrack = null;
+var videoEnabled = false;
 
 function toggleRecordingMode() {
     if (recordingMode === 'video') {
@@ -164,6 +166,23 @@ function initMuteControl(localStream) {
     }
 }
 
+function initCameraControl(localStream) {
+    currentVideoTrack = null;
+    if (localStream && localStream.getVideoTracks().length > 0) {
+        currentVideoTrack = localStream.getVideoTracks()[0];
+        currentVideoTrack.enabled = false; // Start with video disabled
+    }
+    videoEnabled = false;
+    const camImg = document.getElementById('cameraToggle');
+    if (camImg) {
+        camImg.src = '/video-call/images/camera_off.png';
+        camImg.className = 'cameraWidget';
+        camImg.style.display = '';
+        camImg.onclick = toggleCamera;
+        camImg.title = 'Enable camera';
+    }
+}
+
 // Toggle mute/unmute
 function toggleMute() {
     if (!currentAudioTrack) return;
@@ -181,5 +200,55 @@ function toggleMute() {
     }
 }
 
+// Only allow toggling camera if not screen sharing
+function toggleCamera() {
+    if (recordingMode !== 'video') return;
+    if (!currentVideoTrack) return;
+    videoEnabled = !videoEnabled;
+    currentVideoTrack.enabled = videoEnabled;
+    const camImg = document.getElementById('cameraToggle');
+    if (camImg) {
+        if (videoEnabled) {
+            camImg.src = '/video-call/images/camera.png';
+            camImg.title = 'Disable camera';
+        } else {
+            camImg.src = '/video-call/images/camera_off.png';
+            camImg.title = 'Enable camera';
+        }
+    }
+}
+
+// When switching to screen sharing, always disable camera icon and ignore toggling
+function updateCameraControlForMode() {
+    const camImg = document.getElementById('cameraToggle');
+    if (recordingMode === 'display') {
+        if (camImg) {
+            camImg.src = '/video-call/images/camera_off.png';
+            camImg.title = 'Camera disabled during screen sharing';
+            camImg.style.opacity = '0.5';
+            camImg.onclick = null;
+        }
+        if (currentVideoTrack) currentVideoTrack.enabled = false;
+        videoEnabled = false;
+    } else {
+        if (camImg) {
+            camImg.style.opacity = '1';
+            camImg.onclick = toggleCamera;
+            camImg.title = videoEnabled ? 'Disable camera' : 'Enable camera';
+        }
+    }
+}
+
+// Patch toggleMedia to update camera control when switching modes
+const _origToggleMedia = typeof toggleMedia === 'function' ? toggleMedia : null;
+function toggleMediaPatched(stream) {
+    if (_origToggleMedia) _origToggleMedia(stream);
+    updateCameraControlForMode();
+}
+window.toggleMedia = toggleMediaPatched;
+
 window.initMuteControl = initMuteControl;
 window.toggleMute = toggleMute;
+window.initCameraControl = initCameraControl;
+window.toggleCamera = toggleCamera;
+window.updateCameraControlForMode = updateCameraControlForMode;
