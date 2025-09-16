@@ -281,3 +281,9 @@ span {
 .micWidget:hover {
     filter: brightness(75%);
 }
+
+.micWidgetContainer {
+   width:100%;
+   display:flex;
+   align-items:flex-start;
+}
