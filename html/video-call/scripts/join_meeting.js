@@ -86,43 +86,6 @@ function startChat(meetingId) {
     };
 }
 
-// Show file preview and send/cancel buttons
-function showFilePreview(file) {
-    const previewDiv = document.getElementById('filePreviewDiv');
-    let fileInfo = `<span style="color:#bfbfbf;">Selected file: ${file.name} (${Math.round(file.size/1024)} KB)</span>`;
-    let sendBtn = `<button id="sendFileBtn" class="callButton" style="margin-left:8px;">Send</button>`;
-    let cancelBtn = `<button id="cancelFileBtn" class="callButton" style="margin-left:8px;background:#515151;">Cancel</button>`;
-    let progressBar = `<div id="fileUploadProgress" style="margin-top:8px;display:none;">
-        <div style="background:#515151;border-radius:8px;width:80%;height:12px;position:relative;">
-            <div id="fileUploadProgressBar" style="background:#ed62b5;height:12px;width:0%;border-radius:8px;"></div>
-        </div>
-        <span id="fileUploadProgressText" style="color:#bfbfbf;font-size:0.9em;"></span>
-    </div>`;
-    previewDiv.innerHTML = fileInfo + sendBtn + cancelBtn + progressBar;
-
-    document.getElementById('sendFileBtn').onclick = async () => {
-        uploadInProgress = true;
-        document.getElementById('fileUploadProgress').style.display = 'block';
-        await sendFile(selectedFile);
-        clearFilePreview();
-        uploadInProgress = false;
-    };
-    document.getElementById('cancelFileBtn').onclick = () => {
-        if (uploadInProgress) return; // Prevent cancel during upload
-        clearFilePreview();
-    };
-}
-
-function updateFileUploadProgress(current, total) {
-    const sentKB = Math.round(current * FILE_CHUNK_SIZE / 1024);
-    const totalKB = Math.round(total * FILE_CHUNK_SIZE / 1024);
-    const percent = Math.floor((current / total) * 100);
-    const bar = document.getElementById('fileUploadProgressBar');
-    const text = document.getElementById('fileUploadProgressText');
-    if (bar) bar.style.width = percent + '%';
-    if (text) text.textContent = `Uploading... ${percent}% (${sentKB} KB / ${totalKB} KB)`;
-}
-
 // Encrypt and send chat message
 async function sendMessage() {
     if (!chatActive || !meetingKey) return;
@@ -157,23 +120,6 @@ async function sendMessage() {
     if (selectedFile) {
         await sendFile(selectedFile);
         clearFilePreview();
-    }
-}
-
-// Generate AES-GCM key on join
-async function generateMeetingKey() {
-    meetingKey = await window.crypto.subtle.generateKey(
-        { name: "AES-GCM", length: 256 },
-        true,
-        ["encrypt", "decrypt"]
-    );
-    meetingKeyRaw = await window.crypto.subtle.exportKey("raw", meetingKey);
-}
-
-// Send key to peer via chatConn
-function sendMeetingKey() {
-    if (chatConn && meetingKeyRaw) {
-        chatConn.send({ type: "meeting-key", key: Array.from(new Uint8Array(meetingKeyRaw)) });
     }
 }
 
@@ -267,62 +213,6 @@ async function handleChatData(data) {
     }
 }
 
-// Encrypt and send file in chunks
-async function sendFile(file) {
-    if (!meetingKey) {
-        addSentMessage("No key yet, can't send file.");
-        return;
-    }
-    const iv = window.crypto.getRandomValues(new Uint8Array(12)); // Generate IV once per file
-    const fileBuffer = await file.arrayBuffer();
-    const encrypted = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
-        meetingKey,
-        fileBuffer
-    );
-    const encryptedArr = new Uint8Array(encrypted);
-    const totalChunks = Math.ceil(encryptedArr.length / FILE_CHUNK_SIZE);
-    const fileId = ++outgoingFileId;
-
-    for (let i = 0; i < totalChunks; i++) {
-        if (!uploadInProgress) break; // If cancelled, stop sending
-        const chunk = encryptedArr.slice(i * FILE_CHUNK_SIZE, (i + 1) * FILE_CHUNK_SIZE);
-        chatConn.send({
-            type: "file-chunk",
-            fileId,
-            name: file.name,
-            mime: file.type,
-            chunkIndex: i,
-            totalChunks,
-            iv: Array.from(iv),
-            data: Array.from(chunk)
-        });
-        updateFileUploadProgress(i + 1, totalChunks);
-        await new Promise(r => setTimeout(r, 0));
-    }
-    if (uploadInProgress) {
-        chatConn.send({
-            type: "file-done",
-            fileId,
-            name: file.name,
-            mime: file.type,
-            totalChunks,
-            iv: Array.from(iv)
-        });
-        // Show sent file as a download link in the chat (local, unencrypted)
-        const sentBlob = new Blob([fileBuffer], { type: file.type });
-        const sentUrl = URL.createObjectURL(sentBlob);
-        addSentMessage(`<a href="${sentUrl}" download="${file.name}" class="chatFileLink">Attachment: ${file.name}</a>`);
-    }
-}
-
-function clearFilePreview() {
-    selectedFile = null;
-    uploadInProgress = false;
-    document.getElementById('filePreviewDiv').innerHTML = '';
-    document.getElementById('fileInput').value = '';
-}
-
 // Encrypt and send chat message
 async function sendMessage() {
     if (!chatActive || !meetingKey) return;
@@ -358,47 +248,6 @@ async function sendMessage() {
         await sendFile(selectedFile);
         clearFilePreview();
     }
-}
-
-// Generate AES-GCM key on join
-async function generateMeetingKey() {
-    meetingKey = await window.crypto.subtle.generateKey(
-        { name: "AES-GCM", length: 256 },
-        true,
-        ["encrypt", "decrypt"]
-    );
-    meetingKeyRaw = await window.crypto.subtle.exportKey("raw", meetingKey);
-}
-
-// Send key to peer via chatConn
-function sendMeetingKey() {
-    if (chatConn && meetingKeyRaw) {
-        chatConn.send({ type: "meeting-key", key: Array.from(new Uint8Array(meetingKeyRaw)) });
-    }
-}
-
-// Open or reopen chat connection
-function openChatConnection(meetingId) {
-    if (chatConn) chatConn.close();
-    chatConn = peer.connect(meetingId);
-
-    chatConn.on('open', async () => {
-        chatActive = true;
-        chatConn.on('data', handleChatData);
-        chatConn.on('close', () => {
-            chatActive = false;
-            reconnectInterval = setInterval(() => {
-                if (chatActive) {
-                    clearInterval(reconnectInterval);
-                } else {
-                    openChatConnection(meetingId);
-                }
-            }, 5000);
-        });
-        await generateMeetingKey();
-        sendMeetingKey();
-        // addFileInput(); // Removed as per change
-    });
 }
 
 // Handle incoming chat data (for file and key)
@@ -465,82 +314,6 @@ async function handleChatData(data) {
     } else {
         addReceivedMessage(data);
     }
-}
-
-// Encrypt and send file in chunks
-async function sendFile(file) {
-    if (!meetingKey) {
-        addSentMessage("No key yet, can't send file.");
-        return;
-    }
-    const iv = window.crypto.getRandomValues(new Uint8Array(12)); // Generate IV once per file
-    const fileBuffer = await file.arrayBuffer();
-    const encrypted = await window.crypto.subtle.encrypt(
-        { name: "AES-GCM", iv },
-        meetingKey,
-        fileBuffer
-    );
-    const encryptedArr = new Uint8Array(encrypted);
-    const totalChunks = Math.ceil(encryptedArr.length / FILE_CHUNK_SIZE);
-    const fileId = ++outgoingFileId;
-
-    for (let i = 0; i < totalChunks; i++) {
-        if (!uploadInProgress) break; // If cancelled, stop sending
-        const chunk = encryptedArr.slice(i * FILE_CHUNK_SIZE, (i + 1) * FILE_CHUNK_SIZE);
-        chatConn.send({
-            type: "file-chunk",
-            fileId,
-            name: file.name,
-            mime: file.type,
-            chunkIndex: i,
-            totalChunks,
-            iv: Array.from(iv),
-            data: Array.from(chunk)
-        });
-        updateFileUploadProgress(i + 1, totalChunks);
-        await new Promise(r => setTimeout(r, 0));
-    }
-    if (uploadInProgress) {
-        chatConn.send({
-            type: "file-done",
-            fileId,
-            name: file.name,
-            mime: file.type,
-            totalChunks,
-            iv: Array.from(iv)
-        });
-        // Show sent file as a download link in the chat (local, unencrypted)
-        const sentBlob = new Blob([fileBuffer], { type: file.type });
-        const sentUrl = URL.createObjectURL(sentBlob);
-        addSentMessage(`<a href="${sentUrl}" download="${file.name}" class="chatFileLink">Attachment: ${file.name}</a>`);
-    }
-}
-
-function clearFilePreview() {
-    selectedFile = null;
-    uploadInProgress = false;
-    document.getElementById('filePreviewDiv').innerHTML = '';
-    document.getElementById('fileInput').value = '';
-}
-
-// Display received message
-function addReceivedMessage(text) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'receivedMessageDiv';
-    messageDiv.innerHTML = `<div class="receivedMessageText"><div class="chatTextDiv"><span class="chatTextDiv">${text}</span></div></div>`;
-    const chatContentDiv = document.getElementById('chatContentDiv');
-    chatContentDiv.appendChild(messageDiv);
-    chatContentDiv.scrollTop = chatContentDiv.scrollHeight;
-}
-
-// Display sent message
-function addSentMessage(text) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'sentMessageDiv';
-    messageDiv.innerHTML = `<div class="sentMessageText"><div class="chatTextDiv"><span class="chatTextDiv">${text}</span></div></div>`;
-    const chatContentDiv = document.getElementById('chatContentDiv');
-    chatContentDiv.appendChild(messageDiv);
-    chatContentDiv.scrollTop = chatContentDiv.scrollHeight;
 }
 
 // Handle success from getUserMedia
