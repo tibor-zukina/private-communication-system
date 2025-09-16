@@ -220,7 +220,7 @@ function getUserMediaSuccess(capturedStream) {
     document.getElementById('meetingStatus').innerHTML = 'Waiting for the other side to join...';
 
     // Generate invitation URL
-    const invitationUrl = `https://${host}/video-call/join-meeting.php?path=${params.get('path')}&key=${params.get('key')}&id=${peerId}`;
+    const invitationUrl = `https://${host}/video-call/join-meeting?path=${params.get('path')}&key=${params.get('key')}&id=${peerId}`;
     const invitationElem = document.getElementById('invitationUrl');
     invitationElem.innerHTML = `<span id="copyInvitationLink" style="cursor:pointer;text-decoration:underline;">Copy invitation link</span>`;
 
