@@ -17,7 +17,6 @@ let meetingKeyRaw; // ArrayBuffer for export/import
 // Buffer for messages/files received before key is ready
 let pendingEncryptedMessages = [];
 
-const FILE_CHUNK_SIZE = 4096; // 4KB
 let outgoingFileId = 0;
 let incomingFiles = {};
 

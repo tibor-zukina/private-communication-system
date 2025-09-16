@@ -7,6 +7,7 @@ var currentAudioTrack = null;
 var micMuted = false;
 var currentVideoTrack = null;
 var videoEnabled = false;
+let _origToggleMedia = null; // Change to let since we'll reassign it
 
 function toggleRecordingMode() {
     if (recordingMode === 'video') {
@@ -240,10 +241,10 @@ function updateCameraControlForMode() {
 }
 
 // Patch toggleMedia to update camera control when switching modes
-const _origToggleMedia = typeof toggleMedia === 'function' ? toggleMedia : null;
 function toggleMediaPatched(stream) {
-    if (_origToggleMedia) _origToggleMedia(stream);
-    updateCameraControlForMode();
+    if (_origToggleMedia) {
+        _origToggleMedia(stream);
+    }
 }
 window.toggleMedia = toggleMediaPatched;
 

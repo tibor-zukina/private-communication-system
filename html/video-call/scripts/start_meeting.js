@@ -11,7 +11,6 @@ let startTime = 0;
 let previousState = 'not started';
 let lastCallTime;
 let callPeerConnection;
-const FILE_CHUNK_SIZE = 4096; // 4KB
 let outgoingFileId = 0;
 let incomingFiles = {};
 
