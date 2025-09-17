@@ -134,13 +134,11 @@ span {
 }
 
 .micCameraWidgetContainer {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
+    position: relative;
     z-index: 2;
     display: flex;
     gap: 8px;
-    align-items: center;
+    align-items: flex-start;
 }
 
 #meetingStatus,
@@ -344,14 +342,14 @@ span {
         padding: 12px 16px;
         margin: 12px 0;
         width: 100%;
-        max-width: 400px;
+        max-width: 300px;
     }
 
     .micWidget, 
     .cameraWidget {
-        width: 40px;
-        height: 40px;
-        margin: 10px;
+        width: 64px;
+        height: 64px;
+        margin: 10px 10px 10px 0;
     }
 
     .fullscreenWidget {
