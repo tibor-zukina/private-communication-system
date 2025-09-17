@@ -11,7 +11,13 @@ const urlsToCache = [
   '/video-call/images/fullscreen.png',
   '/video-call/images/send_gray.png',
   '/video-call/images/file_gray.png',
-  '/video-call/images/empty_background_pattern.jpg'
+  '/video-call/images/empty_background_pattern.jpg',
+  '/video-call/scripts/chat_utils.js',
+  '/video-call/scripts/encryption_utils.js',
+  '/video-call/scripts/join_meeting.js',
+  '/video-call/scripts/peerjs.js',
+  '/video-call/scripts/video_utils.js',
+  '/video-call/scripts/start_meeting.js'
 ];
 
 self.addEventListener('install', event => {
