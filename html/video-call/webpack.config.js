@@ -1,5 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const WorkboxWebpackPlugin = require('workbox-webpack-plugin');
 
 module.exports = {
   entry: './src/index.js',
@@ -30,6 +32,16 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/index.html',
       filename: '../index.html' // Output to parent directory
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { from: 'public/manifest.json', to: '..' },
+        { from: 'src/service-worker.js', to: '..' }
+      ]
+    }),
+    new WorkboxWebpackPlugin.GenerateSW({
+      clientsClaim: true,
+      skipWaiting: true,
     })
   ],
   devServer: {
