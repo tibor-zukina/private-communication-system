@@ -1,4 +1,4 @@
-const host = 'communication.perpetuumit.com';
+const host = 'chat-communication.perpetuumit.com';
 let peer;
 let peerId;
 let meetingDeviceIds = [];
