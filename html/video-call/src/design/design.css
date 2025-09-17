@@ -322,8 +322,8 @@ span {
     }
 
     textArea {
-        width: 90%;
-        max-width: 90%;
+        width: 80%;
+        max-width: 80%;
         font-size: 16px; /* Prevent iOS zoom on focus */
         padding: 12px;
     }
