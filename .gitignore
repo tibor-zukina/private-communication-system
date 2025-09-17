@@ -1,7 +1,5 @@
 secrets.json
 node_modules
 html/.htpasswd
-html/video-call/dist/bundle.js
-html/video-call/dist/index.html
-html/video-call/dist/bundle.js.LICENSE.txt
+dist
 html/video-call/index.html
