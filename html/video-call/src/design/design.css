@@ -133,6 +133,16 @@ span {
     position: relative;
 }
 
+.micCameraWidgetContainer {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    z-index: 2;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 #meetingStatus,
 #invitationUrl {
     display: block;
@@ -238,6 +248,7 @@ span {
   width: 32px;
   height: auto;
   display: none;
+  z-index: 2;
 }
 
 .fullscreenWidget:hover {
@@ -280,10 +291,4 @@ span {
 }
 .micWidget:hover, .cameraWidget:hover {
     filter: brightness(75%);
-}
-
-.micCameraWidgetContainer {
-   width:100%;
-   display:flex;
-   align-items:flex-start;
 }
