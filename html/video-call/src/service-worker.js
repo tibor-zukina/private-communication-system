@@ -18,7 +18,7 @@ const urlsToCache = [
   '/video-call/dist/static/js/encryption_utils.js',
   '/video-call/dist/static/js/start_meeting.js',
   '/video-call/dist/static/js/join_meeting.js',
-  '/video-call/static/css/design.css'
+  '/video-call/dist/static/css/design.css'
 ];
 
 self.addEventListener('install', event => {
