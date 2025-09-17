@@ -1,5 +1,8 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const WorkboxWebpackPlugin = require('workbox-webpack-plugin');
 
 module.exports = {
   entry: './src/index.js',
@@ -22,7 +25,13 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ['style-loader', 'css-loader']
+        use: [
+          MiniCssExtractPlugin.loader,
+          {
+            loader: 'css-loader',
+            options: { url: false } // Don't process URLs in CSS
+          }
+        ]
       }
     ]
   },
@@ -30,6 +39,33 @@ module.exports = {
     new HtmlWebpackPlugin({
       template: './src/index.html',
       filename: '../index.html' // Output to parent directory
+    }),
+    new MiniCssExtractPlugin({
+      filename: 'static/css/[name].css'
+    }),
+    new CopyWebpackPlugin({
+      patterns: [
+        { 
+          from: 'scripts',
+          to: 'static/js'
+        },
+        {
+          from: 'src/design/design.css',
+          to: 'static/css/design.css'
+        },
+        {
+          from: 'public/manifest.json',
+          to: '..'
+        },
+        {
+          from: 'src/service-worker.js',
+          to: '..'
+        }
+      ]
+    }),
+    new WorkboxWebpackPlugin.GenerateSW({
+      clientsClaim: true,
+      skipWaiting: true,
     })
   ],
   devServer: {
