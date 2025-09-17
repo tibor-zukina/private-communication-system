@@ -1,10 +1,11 @@
 {
   "peerServer": {
+    "host": "chat-communication.perpetuumit.com",
     "port": 3728,
     "concurrent_limit": 100
   },
   "ssl": {
-    "key": "/etc/ssl/selfsigned/selfsigned.key",
-    "cert": "/etc/ssl/selfsigned/selfsigned.crt"
+    "key": "/etc/peer-server/certs/privkey.pem",
+    "cert": "/etc/peer-server/certs/fullchain.pem"
   }
 }
