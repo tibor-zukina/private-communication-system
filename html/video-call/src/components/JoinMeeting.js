@@ -27,10 +27,10 @@ export default function JoinMeeting() {
       <div id="streamDiv">
         <div className="localVideoDiv">
           <video autoPlay id="localVideo" poster="/video-call/images/video_portrait.png"></video>
-          <div className="micCameraWidgetContainer">
-            <img id="cameraToggle" src="/video-call/images/camera_off.png" className="cameraWidget invisibleButton" alt="Enable/disable camera" title="Enable camera" />
-            <img id="micToggle" src="/video-call/images/microphone.png" className="micWidget invisibleButton" alt="Mute/unmute microphone" title="Mute/unmute microphone" />
-          </div>
+        </div>
+        <div className="micCameraWidgetContainer">
+          <img id="cameraToggle" src="/video-call/images/camera_off.png" className="cameraWidget invisibleButton" alt="Enable/disable camera" title="Enable camera" />
+          <img id="micToggle" src="/video-call/images/microphone.png" className="micWidget invisibleButton" alt="Mute/unmute microphone" title="Mute/unmute microphone" />
         </div>
         <input type="hidden" id="meetingId" value={searchParams.get('id') || ''} />
         <div>
