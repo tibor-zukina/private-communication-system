@@ -4,6 +4,7 @@ const secrets = require('./secrets.json');
 const configuration = require('./configuration.json');
 
 const peerServer = PeerServer({
+  host: configuration.peerServer.host,
   port: configuration.peerServer.port,
   concurrent_limit: configuration.peerServer.concurrent_limit,
   allow_discovery: false,
