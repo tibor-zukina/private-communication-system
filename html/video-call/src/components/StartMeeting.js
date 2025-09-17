@@ -7,11 +7,11 @@ export default function StartMeeting() {
   useEffect(() => {
     // Load required scripts
     const scripts = [
-      '/video-call/static/js/peerjs.js',
-      '/video-call/static/js/video_utils.js',
-      '/video-call/static/js/chat_utils.js',
-      '/video-call/static/js/encryption_utils.js',
-      '/video-call/static/js/start_meeting.js'
+      '/video-call/dist/static/js/peerjs.js',
+      '/video-call/dist/static/js/video_utils.js',
+      '/video-call/dist/static/js/chat_utils.js',
+      '/video-call/dist/static/js/encryption_utils.js',
+      '/video-call/dist/static/js/start_meeting.js'
     ];
 
     scripts.forEach(src => {

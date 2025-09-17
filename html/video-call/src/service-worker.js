@@ -12,12 +12,12 @@ const urlsToCache = [
   '/video-call/images/send_gray.png',
   '/video-call/images/file_gray.png',
   '/video-call/images/empty_background_pattern.jpg',
-  '/video-call/static/js/chat_utils.js',
-  '/video-call/static/js/encryption_utils.js',
-  '/video-call/static/js/join_meeting.js',
-  '/video-call/static/js/peerjs.js',
-  '/video-call/static/js/video_utils.js',
-  '/video-call/static/js/start_meeting.js',
+  '/video-call/dist/static/js/peerjs.js',
+  '/video-call/dist/static/js/video_utils.js',
+  '/video-call/dist/static/js/chat_utils.js',
+  '/video-call/dist/static/js/encryption_utils.js',
+  '/video-call/dist/static/js/start_meeting.js',
+  '/video-call/dist/static/js/join_meeting.js',
   '/video-call/static/css/design.css'
 ];
 
