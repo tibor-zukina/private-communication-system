@@ -1,4 +1,5 @@
-const host = 'chat-communication.perpetuumit.com';
+const peerHost = 'chat-communication.perpetuumit.com';
+
 let meetingDeviceIds = [];
 let meetingId;
 let chatConn = null;
@@ -33,7 +34,7 @@ function makeRandomId(length) {
 // Setup PeerJS instance
 function setUpPeer(peerServerPath, peerServerKey) {
     peer = new Peer(makeRandomId(32), {
-        host: host,
+        host: peerHost,
         port: 3728,
         path: peerServerPath,
         key: peerServerKey
