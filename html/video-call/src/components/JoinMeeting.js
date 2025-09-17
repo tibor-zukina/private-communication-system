@@ -7,11 +7,11 @@ export default function JoinMeeting() {
   useEffect(() => {
     // Load required scripts
     const scripts = [
-      '/video-call/scripts/peerjs.js',
-      '/video-call/scripts/video_utils.js',
-      '/video-call/scripts/chat_utils.js',
-      '/video-call/scripts/encryption_utils.js',
-      '/video-call/scripts/join_meeting.js'
+      '/video-call/static/js/peerjs.js',
+      '/video-call/static/js/video_utils.js',
+      '/video-call/static/js/chat_utils.js',
+      '/video-call/static/js/encryption_utils.js',
+      '/video-call/static/js/join_meeting.js'
     ];
 
     scripts.forEach(src => {
