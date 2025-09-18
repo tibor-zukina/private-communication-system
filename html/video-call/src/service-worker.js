@@ -22,6 +22,7 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
+  console.log('[ServiceWorker] Installing');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(urlsToCache))
@@ -29,8 +30,24 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+  console.log('[ServiceWorker] Fetch', event.request.url);
+  
+  if (event.request.headers.get('Upgrade') === 'websocket') {
+    console.log('[ServiceWorker] WebSocket request detected', event.request.url);
+    return;
+  }
+
+  if (event.request.url.includes('chat-communication.perpetuumit.com')) {
+    console.log('[ServiceWorker] PeerJS server request detected', event.request.url);
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(response => response || fetch(event.request))
   );
+});
+
+self.addEventListener('activate', event => {
+  console.log('[ServiceWorker] Activated');
 });
