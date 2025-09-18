@@ -55,9 +55,9 @@ function setUpPeer(peerServerPath, peerServerKey) {
     });
 }
 
-// Get query params and start peer
-const params = new URLSearchParams(window.location.search);
-setUpPeer(params.get('path'), params.get('key'));
+// Get params using the new helper
+const params = getPeerParams();
+setUpPeer(params.path, params.key);
 
 // Start meeting process
 async function startMeeting() {
@@ -228,7 +228,7 @@ function getUserMediaSuccess(capturedStream) {
     document.getElementById('meetingStatus').innerHTML = 'Waiting for the other side to join...';
 
     // Generate invitation URL
-    const invitationUrl = `https://${domainHost}/video-call/join-meeting?path=${params.get('path')}&key=${params.get('key')}&id=${peerId}`;
+    const invitationUrl = `https://${domainHost}/video-call/join-meeting?path=${params.path}&key=${params.key}&id=${peerId}`;
     const invitationElem = document.getElementById('invitationUrl');
     invitationElem.innerHTML = `<span id="copyInvitationLink" style="cursor:pointer;text-decoration:underline;">Copy invitation link</span>`;
 

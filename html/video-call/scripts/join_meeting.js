@@ -46,9 +46,9 @@ function setUpPeer(peerServerPath, peerServerKey) {
     });
 }
 
-// Init from URL params
-const params = new URLSearchParams(window.location.search);
-setUpPeer(params.get('path'), params.get('key'));
+// Get params using the new helper
+const params = getPeerParams();
+setUpPeer(params.path, params.key);
 
 // Join meeting flow
 function joinMeeting() {

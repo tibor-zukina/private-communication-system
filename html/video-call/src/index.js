@@ -23,3 +23,21 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+
+// Save params when opening normally
+const params = new URLSearchParams(window.location.search);
+if (params.has('path') && params.has('key')) {
+    localStorage.setItem('peerPath', params.get('path'));
+    localStorage.setItem('peerKey', params.get('key'));
+}
+
+// Get params either from URL or localStorage
+function getPeerParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        path: params.get('path') || localStorage.getItem('peerPath'),
+        key: params.get('key') || localStorage.getItem('peerKey')
+    };
+}
+
+window.getPeerParams = getPeerParams;
