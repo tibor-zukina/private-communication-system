@@ -55,9 +55,6 @@ function setUpPeer(peerServerPath, peerServerKey) {
     });
 }
 
-// Get params using the new helper
-const params = getPeerParams();
-setUpPeer(params.path, params.key);
 
 // Start meeting process
 async function startMeeting() {

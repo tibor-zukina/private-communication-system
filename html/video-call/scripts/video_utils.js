@@ -253,3 +253,53 @@ window.toggleMute = toggleMute;
 window.initCameraControl = initCameraControl;
 window.toggleCamera = toggleCamera;
 window.updateCameraControlForMode = updateCameraControlForMode;
+
+
+function createCredentialsPrompt() {
+    // Only create if not exists
+    if (document.getElementById('credentialsOverlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'credentialsOverlay';
+    overlay.className = 'credentials-overlay';
+    
+    overlay.innerHTML = `
+        <div class="credentials-prompt">
+            <h3>Enter Server Credentials</h3>
+            <input type="text" id="serverPath" placeholder="Server Path" required>
+            <input type="text" id="serverKey" placeholder="Server Key" required>
+            <button class="callButton" onclick="submitCredentials()">Connect</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+}
+
+function submitCredentials() {
+    const path = document.getElementById('serverPath').value;
+    const key = document.getElementById('serverKey').value;
+    
+    if (!path || !key) {
+        alert('Please enter both server path and key');
+        return;
+    }
+
+    // Store credentials
+    localStorage.setItem('peerPath', path);
+    localStorage.setItem('peerKey', key);
+    
+    // Initialize peer connection
+    setUpPeer(path, key);
+    
+    // Remove credentials prompt
+    document.getElementById('credentialsOverlay').remove();
+}
+
+const path = localStorage.getItem('peerPath');
+const key = localStorage.getItem('peerKey');
+
+if (path && key) {
+    setUpPeer(path, key);
+} else {
+    createCredentialsPrompt();
+}
