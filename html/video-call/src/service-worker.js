@@ -1,4 +1,5 @@
 const CACHE_NAME = 'private-chat-v1';
+const DISABLE_CACHE = true; // Toggle this for development/production
 const urlsToCache = [
   '/video-call/',
   '/video-call/index.html',
@@ -30,6 +31,11 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+  // Skip cache in development
+  if (DISABLE_CACHE) {
+    return;
+  }
+
   console.log('[ServiceWorker] Fetch', event.request.url);
   
   if (event.request.headers.get('Upgrade') === 'websocket') {
