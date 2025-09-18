@@ -40,12 +40,18 @@ function setUpPeer(peerServerPath, peerServerKey) {
         host: peerHost,
         port: 3728,
         path: peerServerPath,
-        key: peerServerKey
+        key: peerServerKey,
+        debug: 3 // Enable full logging
     });
 
     peer.on('open', () => {
+        window.appLog('PEER', 'Connection opened');
         const callButton = document.querySelector('.callButton.invisibleButton');
         if (callButton) callButton.className = 'callButton';
+    });
+    
+    peer.on('error', (err) => {
+        window.appLog('ERROR', 'PeerJS error:', err);
     });
 }
 
@@ -218,6 +224,7 @@ async function handleChatData(data) {
 
 // Media capture success handler
 function getUserMediaSuccess(capturedStream) {
+    window.appLog('MEDIA', 'Got user media stream');
     document.getElementById('meetingStatus').innerHTML = 'Waiting for the other side to join...';
 
     // Generate invitation URL
