@@ -2,7 +2,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const WorkboxWebpackPlugin = require('workbox-webpack-plugin');
+const WorkboxPlugin = require('workbox-webpack-plugin');
 
 module.exports = {
   entry: './src/index.js',
@@ -63,9 +63,27 @@ module.exports = {
         }
       ]
     }),
-    new WorkboxWebpackPlugin.GenerateSW({
-      clientsClaim: true,
+    new WorkboxPlugin.GenerateSW({
+      // Skip waiting for service worker activation
       skipWaiting: true,
+      // Take control immediately
+      clientsClaim: true,
+      // Don't precache images
+      exclude: [/\.(?:png|jpg|jpeg|svg|gif)$/],
+      // Development mode with verbose logging
+      mode: 'development',
+      // Custom runtime caching rules
+      runtimeCaching: [{
+        // Cache API requests
+        urlPattern: /^https:\/\/chat-communication\.perpetuumit\.com/,
+        handler: 'NetworkFirst'
+      }],
+      // Development mode means no caching in service worker
+      injectManifest: {
+        swSrc: './src/service-worker.js',
+        swDest: 'service-worker.js',
+        maximumFileSizeToCacheInBytes: 5000000,
+      }
     })
   ],
   devServer: {
