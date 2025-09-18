@@ -11,7 +11,8 @@ export default function StartMeeting() {
       '/video-call/dist/static/js/video_utils.js',
       '/video-call/dist/static/js/chat_utils.js',
       '/video-call/dist/static/js/encryption_utils.js',
-      '/video-call/dist/static/js/start_meeting.js'
+      '/video-call/dist/static/js/start_meeting.js',
+      '/video-call/dist/static/js/log_utils.js',
     ];
 
     scripts.forEach(src => {
