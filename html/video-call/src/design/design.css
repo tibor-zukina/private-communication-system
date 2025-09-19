@@ -427,3 +427,24 @@ span {
     width: 100%;
     margin-top: 15px;
 }
+
+.mode-select {
+    margin: 15px 0;
+    text-align: left;
+}
+
+.mode-select label {
+    display: block;
+    margin: 10px 0;
+    color: white;
+}
+
+.mode-select input[type="radio"] {
+    margin-right: 10px;
+}
+
+.credentials-prompt input[type="text"] {
+    width: 100%;
+    margin: 10px 0;
+    box-sizing: border-box;
+}

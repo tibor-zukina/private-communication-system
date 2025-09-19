@@ -34,7 +34,7 @@ function makeRandomId(length) {
 }
 
 // Initialize PeerJS
-function setUpPeer(peerServerPath, peerServerKey) {
+function setUpPeerStart(peerServerPath, peerServerKey) {
     peerId = makeRandomId(32);
     peer = new Peer(peerId, {
         host: peerHost,
@@ -45,13 +45,13 @@ function setUpPeer(peerServerPath, peerServerKey) {
     });
 
     peer.on('open', () => {
-        window.appLog('PEER', 'Connection opened');
+        console.log('PEER', 'Connection opened');
         const callButton = document.querySelector('.callButton.invisibleButton');
         if (callButton) callButton.className = 'callButton';
     });
     
     peer.on('error', (err) => {
-        window.appLog('ERROR', 'PeerJS error:', err);
+        console.log('ERROR', 'PeerJS error:', err);
     });
 }
 
@@ -221,7 +221,7 @@ async function handleChatData(data) {
 
 // Media capture success handler
 function getUserMediaSuccess(capturedStream) {
-    window.appLog('MEDIA', 'Got user media stream');
+    console.log('MEDIA', 'Got user media stream');
     document.getElementById('meetingStatus').innerHTML = 'Waiting for the other side to join...';
 
     // Generate invitation URL

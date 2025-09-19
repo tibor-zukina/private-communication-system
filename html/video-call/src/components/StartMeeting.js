@@ -8,11 +8,11 @@ export default function StartMeeting() {
     // Load required scripts
     const scripts = [
       '/video-call/dist/static/js/peerjs.js',
-      '/video-call/dist/static/js/video_utils.js',
       '/video-call/dist/static/js/chat_utils.js',
       '/video-call/dist/static/js/encryption_utils.js',
       '/video-call/dist/static/js/start_meeting.js',
-      '/video-call/dist/static/js/log_utils.js',
+      '/video-call/dist/static/js/join_meeting.js',
+      '/video-call/dist/static/js/video_utils.js'
     ];
 
     scripts.forEach(src => {

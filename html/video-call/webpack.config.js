@@ -68,22 +68,12 @@ module.exports = {
       skipWaiting: true,
       // Take control immediately
       clientsClaim: true,
-      // Don't precache images
-      exclude: [/\.(?:png|jpg|jpeg|svg|gif)$/],
-      // Development mode with verbose logging
-      mode: 'development',
       // Custom runtime caching rules
       runtimeCaching: [{
         // Cache API requests
-        urlPattern: /^https:\/\/chat-communication\.perpetuumit\.com/,
+        urlPattern: new RegExp('^https://chat-communication\\.perpetuumit\\.com'),
         handler: 'NetworkFirst'
-      }],
-      // Development mode means no caching in service worker
-      injectManifest: {
-        swSrc: './src/service-worker.js',
-        swDest: 'service-worker.js',
-        maximumFileSizeToCacheInBytes: 5000000,
-      }
+      }]
     })
   ],
   devServer: {
