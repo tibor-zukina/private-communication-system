@@ -2,7 +2,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const WorkboxWebpackPlugin = require('workbox-webpack-plugin');
+const WorkboxPlugin = require('workbox-webpack-plugin');
 
 module.exports = {
   entry: './src/index.js',
@@ -63,9 +63,17 @@ module.exports = {
         }
       ]
     }),
-    new WorkboxWebpackPlugin.GenerateSW({
-      clientsClaim: true,
+    new WorkboxPlugin.GenerateSW({
+      // Skip waiting for service worker activation
       skipWaiting: true,
+      // Take control immediately
+      clientsClaim: true,
+      // Custom runtime caching rules
+      runtimeCaching: [{
+        // Cache API requests
+        urlPattern: new RegExp('^https://chat-communication\\.perpetuumit\\.com'),
+        handler: 'NetworkFirst'
+      }]
     })
   ],
   devServer: {

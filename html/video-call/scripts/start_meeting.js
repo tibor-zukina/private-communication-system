@@ -34,24 +34,27 @@ function makeRandomId(length) {
 }
 
 // Initialize PeerJS
-function setUpPeer(peerServerPath, peerServerKey) {
+function setUpPeerStart(peerServerPath, peerServerKey) {
     peerId = makeRandomId(32);
     peer = new Peer(peerId, {
         host: peerHost,
         port: 3728,
         path: peerServerPath,
-        key: peerServerKey
+        key: peerServerKey,
+        debug: 3 // Enable full logging
     });
 
     peer.on('open', () => {
+        console.log('PEER', 'Connection opened');
         const callButton = document.querySelector('.callButton.invisibleButton');
         if (callButton) callButton.className = 'callButton';
     });
+    
+    peer.on('error', (err) => {
+        console.log('ERROR', 'PeerJS error:', err);
+    });
 }
 
-// Get query params and start peer
-const params = new URLSearchParams(window.location.search);
-setUpPeer(params.get('path'), params.get('key'));
 
 // Start meeting process
 async function startMeeting() {
@@ -218,10 +221,11 @@ async function handleChatData(data) {
 
 // Media capture success handler
 function getUserMediaSuccess(capturedStream) {
+    console.log('MEDIA', 'Got user media stream');
     document.getElementById('meetingStatus').innerHTML = 'Waiting for the other side to join...';
 
     // Generate invitation URL
-    const invitationUrl = `https://${domainHost}/video-call/join-meeting?path=${params.get('path')}&key=${params.get('key')}&id=${peerId}`;
+    const invitationUrl = `https://${domainHost}/video-call/join-meeting?path=${localStorage.getItem('peerPath')}&key=${localStorage.getItem('peerKey')}&id=${peerId}`;
     const invitationElem = document.getElementById('invitationUrl');
     invitationElem.innerHTML = `<span id="copyInvitationLink" style="cursor:pointer;text-decoration:underline;">Copy invitation link</span>`;
 

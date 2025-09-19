@@ -1,5 +1,3 @@
-const peerHost = 'chat-communication.perpetuumit.com';
-
 let meetingDeviceIds = [];
 let meetingId;
 let chatConn = null;
@@ -9,7 +7,6 @@ let counterInterval = null;
 let reconnectInterval = null;
 let startTime = 0;
 let previousState = 'not started';
-let callPeerConnection;
 let peer;
 let meetingLocalStream;
 let meetingKey; // CryptoKey for AES-GCM
@@ -32,7 +29,7 @@ function makeRandomId(length) {
 }
 
 // Setup PeerJS instance
-function setUpPeer(peerServerPath, peerServerKey) {
+function setUpPeerJoin(peerServerPath, peerServerKey) {
     peer = new Peer(makeRandomId(32), {
         host: peerHost,
         port: 3728,
@@ -46,9 +43,9 @@ function setUpPeer(peerServerPath, peerServerKey) {
     });
 }
 
-// Init from URL params
-const params = new URLSearchParams(window.location.search);
-setUpPeer(params.get('path'), params.get('key'));
+// Get params using the new helper
+const params = getPeerParams();
+setUpPeerJoin(params.path, params.key);
 
 // Join meeting flow
 function joinMeeting() {

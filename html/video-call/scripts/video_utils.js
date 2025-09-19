@@ -253,3 +253,85 @@ window.toggleMute = toggleMute;
 window.initCameraControl = initCameraControl;
 window.toggleCamera = toggleCamera;
 window.updateCameraControlForMode = updateCameraControlForMode;
+
+
+function createCredentialsPrompt() {
+    if (document.getElementById('credentialsOverlay')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'credentialsOverlay';
+    overlay.className = 'credentials-overlay';
+    
+    overlay.innerHTML = `
+        <div class="credentials-prompt">
+            <h3>Meeting Setup</h3>
+            <div class="mode-select">
+                <label>
+                    <input type="radio" name="mode" value="start" checked> Start New Meeting
+                </label>
+                <label>
+                    <input type="radio" name="mode" value="join"> Join Meeting
+                </label>
+            </div>
+            <div id="meetingIdField" style="display:none">
+                <input type="text" id="meetingId" placeholder="Meeting ID" required>
+            </div>
+            <input type="text" id="serverPath" placeholder="Server Path" required>
+            <input type="text" id="serverKey" placeholder="Server Key" required>
+            <button class="callButton" onclick="submitCredentials()">Continue</button>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+
+    // Add mode change handler
+    const modeInputs = overlay.querySelectorAll('input[name="mode"]');
+    modeInputs.forEach(input => {
+        input.onchange = () => {
+            const meetingIdField = document.getElementById('meetingIdField');
+            meetingIdField.style.display = input.value === 'join' ? 'block' : 'none';
+        };
+    });
+}
+
+function submitCredentials() {
+    const path = document.getElementById('serverPath').value;
+    const key = document.getElementById('serverKey').value;
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    const meetingId = document.getElementById('meetingId').value;
+    
+    if (!path || !key) {
+        alert('Please enter both server path and key');
+        return;
+    }
+
+    if (mode === 'join' && !meetingId) {
+        alert('Please enter a meeting ID');
+        return;
+    }
+
+    // Store credentials
+    localStorage.setItem('peerPath', path);
+    localStorage.setItem('peerKey', key);
+    
+    // Initialize based on mode
+    if (mode === 'start') {
+        setUpPeerStart(path, key);
+        startMeeting();
+    } else {
+        setUpPeerJoin(path, key);
+        joinMeeting(meetingId);
+    }
+    
+    // Remove credentials prompt
+    document.getElementById('credentialsOverlay').remove();
+}
+
+const path = localStorage.getItem('peerPath');
+const key = localStorage.getItem('peerKey');
+
+if (path && key) {
+    setUpPeer(path, key);
+} else {
+    createCredentialsPrompt();
+}
