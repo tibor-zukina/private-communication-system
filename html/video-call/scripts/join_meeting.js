@@ -1,5 +1,4 @@
 let meetingDeviceIds = [];
-let meetingId;
 let chatConn = null;
 let chatStarted = false;
 let chatActive = false;
@@ -52,7 +51,6 @@ function joinMeeting() {
     const callButton = document.querySelector('.callButton');
     callButton.disabled = true;
     callButton.value = 'Meeting started';
-    meetingId = document.getElementById('meetingId').value;
     navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(enumerationErrorHandler);
 }
 
@@ -61,9 +59,9 @@ let selectedFile = null;
 let uploadInProgress = false;
 
 // Start peer data channel chat
-function startChat(meetingId) {
+function startChat() {
     chatStarted = true;
-    openChatConnection(meetingId);
+    openChatConnection();
 
     const messageInput = document.getElementById('message');
     messageInput.onkeydown = (e) => {
@@ -121,9 +119,9 @@ async function sendMessage() {
 }
 
 // Open or reopen chat connection
-function openChatConnection(meetingId) {
+function openChatConnection() {
     if (chatConn) chatConn.close();
-    chatConn = peer.connect(meetingId);
+    chatConn = peer.connect(window.meetingId);
 
     chatConn.on('open', async () => {
         chatActive = true;
@@ -134,7 +132,7 @@ function openChatConnection(meetingId) {
                 if (chatActive) {
                     clearInterval(reconnectInterval);
                 } else {
-                    openChatConnection(meetingId);
+                    openChatConnection();
                 }
             }, 5000);
         });
@@ -328,7 +326,7 @@ function getUserMediaSuccess(capturedStream) {
     // Ensure camera control is set for initial mode
     window.updateCameraControlForMode();
 
-    const call = peer.call(meetingId, meetingLocalStream);
+    const call = peer.call(window.meetingId, meetingLocalStream);
 
     call.on('stream', (remoteStream) => {
         callPeerConnection = call.peerConnection;
@@ -344,7 +342,7 @@ function getUserMediaSuccess(capturedStream) {
         if (state === 'disconnected') {
             connectionLost();
         } else if (state === 'connected') {
-            if (!chatStarted) startChat(meetingId);
+            if (!chatStarted) startChat();
             startCounter();
         }
         previousState = state;

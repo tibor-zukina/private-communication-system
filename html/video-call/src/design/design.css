@@ -380,8 +380,8 @@ span {
 /* Additional tweaks for very small screens */
 @media screen and (max-width: 480px) {
     textArea {
-        width: 85%;
-        max-width: 85%;
+        width: 75%;
+        max-width: 75%;
     }
 
     .streamingSendWidget {
@@ -418,8 +418,9 @@ span {
 }
 
 .credentials-prompt input {
-    width: 100%;
+    width: auto;
     margin: 10px 0;
+    margin-left: 24px;
     box-sizing: border-box;
 }
 
@@ -434,7 +435,7 @@ span {
 }
 
 .mode-select label {
-    display: block;
+    display: inline-block;
     margin: 10px 0;
     color: white;
 }
@@ -447,4 +448,12 @@ span {
     width: 100%;
     margin: 10px 0;
     box-sizing: border-box;
+}
+
+#fileInput {
+    display: none;
+}
+
+#sendFile {
+    cursor: pointer;
 }

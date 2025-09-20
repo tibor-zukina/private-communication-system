@@ -1,3 +1,131 @@
+// Join-specific chat connection
+function openChatConnection() {
+    if (chatConn) chatConn.close();
+    chatConn = peer.connect(meetingId);
+
+    chatConn.on('open', async () => {
+        chatActive = true;
+        chatConn.on('data', handleChatData);
+        chatConn.on('close', () => {
+            chatActive = false;
+            reconnectInterval = setInterval(() => {
+                if (chatActive) {
+                    clearInterval(reconnectInterval);
+                } else {
+                    openChatConnection();
+                }
+            }, 5000);
+        });
+        await generateMeetingKey();
+        sendMeetingKey();
+    });
+}
+
+
+// Encrypt and send chat message
+async function sendMessage() {
+    if ((!chatStarted && !chatActive) || !meetingKey) return;
+
+    const messageInput = document.getElementById('message');
+    const messageText = messageInput.value.trim();
+    messageInput.value = '';
+
+    // Prevent sending empty message if no file is selected
+    if (!messageText && !selectedFile) return;
+
+    if (messageText) {
+        // Encrypt message
+        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+        const encoder = new TextEncoder();
+        const encrypted = await window.crypto.subtle.encrypt(
+            { name: "AES-GCM", iv },
+            meetingKey,
+            encoder.encode(messageText)
+        );
+
+        chatConn.send({
+            type: "chat",
+            iv: Array.from(iv),
+            encrypted: Array.from(new Uint8Array(encrypted))
+        });
+
+        addSentMessage(messageText);
+    }
+
+    // If file is selected, send it
+    if (selectedFile) {
+        await sendFile(selectedFile);
+        clearFilePreview();
+    }
+}
+
+// Handle incoming chat data (for file and key)
+async function handleChatData(data) {
+    if (typeof data === "object" && data.type === "meeting-key") {
+        // Key handling is now done on the joiner side
+        await importMeetingKey(data.key);
+    } else if ((typeof data === "object" && (data.type === "file" || data.type === "chat"))) {
+        if (!meetingKey) {
+            // Buffer until key is ready
+            pendingEncryptedMessages.push(data);
+            return;
+        }
+        if (data.type === "file") {
+            const iv = new Uint8Array(data.iv);
+            const encrypted = new Uint8Array(data.encrypted);
+            const decrypted = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv },
+                meetingKey,
+                encrypted
+            );
+            const blob = new Blob([decrypted], { type: data.mime });
+            const url = URL.createObjectURL(blob);
+            addReceivedMessage(`<a href="${url}" download="${data.name}" class="chatFileLink">Attachment: ${data.name}</a>`);
+        } else if (data.type === "chat") {
+            const iv = new Uint8Array(data.iv);
+            const encrypted = new Uint8Array(data.encrypted);
+            const decrypted = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv },
+                meetingKey,
+                encrypted
+            );
+            const decoder = new TextDecoder();
+            addReceivedMessage(decoder.decode(decrypted));
+        }
+    } else if (typeof data === "object" && data.type === "file-chunk") {
+        const key = data.fileId;
+        if (!incomingFiles[key]) {
+            incomingFiles[key] = { chunks: [], totalChunks: data.totalChunks, name: data.name, mime: data.mime, iv: data.iv, received: 0 };
+        }
+        incomingFiles[key].chunks[data.chunkIndex] = new Uint8Array(data.data);
+        incomingFiles[key].received++;
+    } else if (typeof data === "object" && data.type === "file-done") {
+        const key = data.fileId;
+        const fileInfo = incomingFiles[key];
+        if (fileInfo && fileInfo.received === fileInfo.totalChunks) {
+            // Concatenate chunks
+            const encryptedArr = new Uint8Array(fileInfo.chunks.reduce((acc, chunk) => acc + chunk.length, 0));
+            let offset = 0;
+            for (const chunk of fileInfo.chunks) {
+                encryptedArr.set(chunk, offset);
+                offset += chunk.length;
+            }
+            // Decrypt
+            const decrypted = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: new Uint8Array(fileInfo.iv) },
+                meetingKey,
+                encryptedArr
+            );
+            const blob = new Blob([decrypted], { type: fileInfo.mime });
+            const url = URL.createObjectURL(blob);
+            addReceivedMessage(`<a href="${url}" download="${fileInfo.name}" class="chatFileLink">Attachment: ${fileInfo.name}</a>`);
+            delete incomingFiles[key];
+        }
+    } else {
+        addReceivedMessage(data);
+    }
+}
+
 // Display sent message
 
 function addSentMessage(text) {
@@ -18,22 +146,6 @@ function addReceivedMessage(text) {
     const chatContentDiv = document.getElementById('chatContentDiv');
     chatContentDiv.appendChild(messageDiv);
     chatContentDiv.scrollTop = chatContentDiv.scrollHeight;
-}
-
-// General message sending (no encryption)
-function sendFileMessage(chatConn, file, callback) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const arrayBuffer = e.target.result;
-        chatConn.send({
-            type: "file",
-            name: file.name,
-            mime: file.type,
-            buffer: Array.from(new Uint8Array(arrayBuffer))
-        });
-        if (callback) callback();
-    };
-    reader.readAsArrayBuffer(file);
 }
 
 // General chat message sending (no encryption)
@@ -80,7 +192,7 @@ function clearFilePreview() {
 
 // Encrypt and send file in chunks
 async function sendFile(file) {
-    if (!chatStarted || !meetingKey) return;
+    if ((!chatStarted && !chatActive) || !meetingKey) return;
     
     const { iv, encryptedArr, totalChunks, name, mime } = await window.encryptAndChunkFile(file, meetingKey);
     const fileId = ++outgoingFileId;
@@ -125,3 +237,5 @@ function updateFileUploadProgress(current, total) {
     if (bar) bar.style.width = percent + '%';
     if (text) text.textContent = `Uploading... ${percent}% (${sentKB} KB / ${totalKB} KB)`;
 }
+
+window.sendMessage = sendMessage;

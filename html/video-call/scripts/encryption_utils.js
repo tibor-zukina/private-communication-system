@@ -17,6 +17,22 @@ function sendMeetingKey() {
     }
 }
 
+// Import AES-GCM key from raw bytes and update key if received again
+async function importMeetingKey(rawBytes) {
+    meetingKey = await window.crypto.subtle.importKey(
+        "raw",
+        new Uint8Array(rawBytes),
+        { name: "AES-GCM" },
+        true,
+        ["encrypt", "decrypt"]
+    );
+    // Reprocess any pending messages with the new key
+    for (const data of pendingEncryptedMessages) {
+        await handleChatData(data);
+    }
+    pendingEncryptedMessages = [];
+}
+
 async function encryptMessage(message, key) {
     const iv = window.crypto.getRandomValues(new Uint8Array(12));
     const encoder = new TextEncoder();
