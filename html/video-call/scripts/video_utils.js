@@ -7,7 +7,6 @@ var currentAudioTrack = null;
 var micMuted = false;
 var currentVideoTrack = null;
 var videoEnabled = false;
-let _origToggleMedia = null; // Change to let since we'll reassign it
 
 function toggleRecordingMode() {
     if (recordingMode === 'video') {
@@ -18,6 +17,11 @@ function toggleRecordingMode() {
 }
 
 function toggleMedia(stream) {
+    if (recordingMode === 'display' && !videoEnabled) {
+        // If in display mode and camera is off, do nothing on toggle
+        return;
+    }
+
     const videoTrack = stream.getVideoTracks()[0];
     const peerSenders = callPeerConnection.getSenders();
     let newButtonText;
@@ -240,24 +244,11 @@ function updateCameraControlForMode() {
     }
 }
 
-// Patch toggleMedia to update camera control when switching modes
-function toggleMediaPatched(stream) {
-    if (_origToggleMedia) {
-        _origToggleMedia(stream);
-    }
-}
-window.toggleMedia = toggleMediaPatched;
-
-window.initMuteControl = initMuteControl;
-window.toggleMute = toggleMute;
-window.initCameraControl = initCameraControl;
-window.toggleCamera = toggleCamera;
-window.updateCameraControlForMode = updateCameraControlForMode;
-
-
 function createCredentialsPrompt() {
     if (document.getElementById('credentialsOverlay')) return;
-
+    
+    const hasCredentials = localStorage.getItem('peerPath') && localStorage.getItem('peerKey');
+    
     const overlay = document.createElement('div');
     overlay.id = 'credentialsOverlay';
     overlay.className = 'credentials-overlay';
@@ -266,18 +257,22 @@ function createCredentialsPrompt() {
         <div class="credentials-prompt">
             <h3>Meeting Setup</h3>
             <div class="mode-select">
-                <label>
-                    <input type="radio" name="mode" value="start" checked> Start New Meeting
-                </label>
-                <label>
-                    <input type="radio" name="mode" value="join"> Join Meeting
-                </label>
+                <div class="mode-select-option">
+                    <label id="startModeLabel">Start New Meeting</label>
+                    <input type="radio" name="mode" value="start" for="startModeLabel" checked/> 
+                </div>
+                <div class="mode-select-option">
+                    <label id="joinModeLabel">Join Meeting</label>
+                    <input type="radio" name="mode" value="join" for="joinModeLabel"/> 
+                </div>
             </div>
+            ${hasCredentials ? '' : `
+                <input type="text" id="serverPath" placeholder="Server Path" required>
+                <input type="text" id="serverKey" placeholder="Server Key" required>
+            `}
             <div id="meetingIdField" style="display:none">
                 <input type="text" id="meetingId" placeholder="Meeting ID" required>
             </div>
-            <input type="text" id="serverPath" placeholder="Server Path" required>
-            <input type="text" id="serverKey" placeholder="Server Key" required>
             <button class="callButton" onclick="submitCredentials()">Continue</button>
         </div>
     `;
@@ -295,43 +290,64 @@ function createCredentialsPrompt() {
 }
 
 function submitCredentials() {
-    const path = document.getElementById('serverPath').value;
-    const key = document.getElementById('serverKey').value;
+    const hasCredentials = localStorage.getItem('peerPath') && localStorage.getItem('peerKey');
     const mode = document.querySelector('input[name="mode"]:checked').value;
-    const meetingId = document.getElementById('meetingId').value;
+    const meetingId = document.getElementById('meetingId').value || null;
     
-    if (!path || !key) {
-        alert('Please enter both server path and key');
-        return;
+    let path;
+    let key;
+    let isStartMode;
+    let meetingActionLabel;
+    
+    if (hasCredentials) {
+        path = localStorage.getItem('peerPath');
+        key = localStorage.getItem('peerKey');
+    } else {
+        path = document.getElementById('serverPath').value;
+        key = document.getElementById('serverKey').value;
+        
+        if (!path || !key) {
+            alert('Please enter both server path and key');
+            return;
+        }
+        
+        // Store new credentials
+        localStorage.setItem('peerPath', path);
+        localStorage.setItem('peerKey', key);
     }
 
     if (mode === 'join' && !meetingId) {
         alert('Please enter a meeting ID');
         return;
     }
-
-    // Store credentials
-    localStorage.setItem('peerPath', path);
-    localStorage.setItem('peerKey', key);
-    
     // Initialize based on mode
-    if (mode === 'start') {
-        setUpPeerStart(path, key);
-        startMeeting();
-    } else {
-        setUpPeerJoin(path, key);
-        joinMeeting(meetingId);
+    if (mode === 'start' || mode === 'join') {
+
+        meetingActionLabel = (mode === 'start') ? 'Start meeting' : 'Join meeting';
+        isStartMode = (mode === 'start') ? true : false;
+
+        console.log('Mode is: ', mode, 'Meeting action label is: ', meetingActionLabel, 'isStartMode:', isStartMode);
+
+        document.getElementById('meetingAction').value = meetingActionLabel;
+        setUpPeer(path, key, isStartMode);
+        startMeeting(meetingId);
+
+        // Remove credentials prompt
+        document.getElementById('credentialsOverlay').remove();
     }
-    
-    // Remove credentials prompt
-    document.getElementById('credentialsOverlay').remove();
+    else {
+        console.log('Invalid meeting mode');
+    }
+  
 }
 
-const path = localStorage.getItem('peerPath');
-const key = localStorage.getItem('peerKey');
+// Replace existing initialization code with:
+createCredentialsPrompt();
 
-if (path && key) {
-    setUpPeer(path, key);
-} else {
-    createCredentialsPrompt();
-}
+window.toggleMedia = toggleMedia;
+
+window.initMuteControl = initMuteControl;
+window.toggleMute = toggleMute;
+window.initCameraControl = initCameraControl;
+window.toggleCamera = toggleCamera;
+window.updateCameraControlForMode = updateCameraControlForMode;
