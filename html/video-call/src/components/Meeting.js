@@ -9,6 +9,7 @@ export default function Meeting() {
       '/video-call/dist/static/js/chat_utils.js',
       '/video-call/dist/static/js/encryption_utils.js',
       '/video-call/dist/static/js/meeting.js',
+      '/video-call/dist/static/js/device_utils.js',
       '/video-call/dist/static/js/video_utils.js'
     ];
 

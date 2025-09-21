@@ -1,10 +1,1 @@
-AuthType Basic
-AuthName "Restricted Area"
-AuthUserFile /var/www/html/.htpasswd
-Require valid-user
-
-# Exempt manifest.json from auth
-<Files "manifest.json">
-    Satisfy Any
-    Allow from all
-</Files>
+Options -Indexes

@@ -119,13 +119,16 @@ function makeCallStream(capturedStream) {
         displayStream.addTrack(capturedStream.getAudioTracks()[0]);
         return displayStream;
     } else {
-        const localVideo = document.getElementById('localVideo');
-        localVideo.playsInline = true;  // Force inline playback
-        localVideo.muted = true;        // Mute only local preview
-        localVideo.controls = true;     // Add controls 
-        if (localVideo.paused) {
-            localVideo.play().catch(e => console.log('Playback failed:', e));
+        if (window.isIOS()) {
+            const localVideo = document.getElementById('localVideo');
+            localVideo.playsInline = true;
+            localVideo.muted = true;
+            localVideo.controls = true;
+            if (localVideo.paused) {
+                localVideo.play().catch(e => console.log('Playback failed:', e));
+            }
         }
+
         return capturedStream;
     }
 }
