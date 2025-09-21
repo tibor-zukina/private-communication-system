@@ -119,16 +119,55 @@ function makeCallStream(capturedStream) {
         displayStream.addTrack(capturedStream.getAudioTracks()[0]);
         return displayStream;
     } else {
+        const localVideo = document.getElementById('localVideo');
+        localVideo.playsInline = true;  // Force inline playback for all devices
+        
+        // iOS-specific video controls
         if (window.isIOS()) {
-            const localVideo = document.getElementById('localVideo');
-            localVideo.playsInline = true;
             localVideo.muted = true;
             localVideo.controls = true;
-            if (localVideo.paused) {
-                localVideo.play().catch(e => console.log('Playback failed:', e));
-            }
         }
 
+        // Enable background audio for all devices
+        try {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: 'Private Meeting',
+                    artwork: [{
+                        src: '/video-call/images/pwa-192x192.png',
+                        sizes: '192x192',
+                        type: 'image/png'
+                    }]
+                });
+                navigator.mediaSession.playbackState = 'playing';
+                
+                // Prevent actual pause when user tries to pause
+                navigator.mediaSession.setActionHandler('play', () => {
+                    localVideo.play();
+                    navigator.mediaSession.playbackState = 'playing';
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    navigator.mediaSession.playbackState = 'playing';
+                });
+                navigator.mediaSession.setActionHandler('stop', () => {
+                    navigator.mediaSession.playbackState = 'playing';
+                });
+            }
+
+            // Request wake lock for all devices
+            if ('wakeLock' in navigator) {
+                navigator.wakeLock.request('screen').catch(err => 
+                    console.log('Wake Lock error:', err)
+                );
+            }
+        } catch (e) {
+            console.log('Background audio setup error:', e);
+        }
+
+        if (localVideo.paused) {
+            localVideo.play().catch(e => console.log('Playback failed:', e));
+        }
+        
         return capturedStream;
     }
 }
@@ -361,3 +400,16 @@ window.toggleMute = toggleMute;
 window.initCameraControl = initCameraControl;
 window.toggleCamera = toggleCamera;
 window.updateCameraControlForMode = updateCameraControlForMode;
+
+// Add iOS detection at the top level
+window.isIOS = function() {
+    return [
+        'iPad Simulator',
+        'iPhone Simulator',
+        'iPod Simulator',
+        'iPad',
+        'iPhone',
+        'iPod'
+    ].includes(navigator.platform)
+    || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+};

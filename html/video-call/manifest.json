@@ -21,5 +21,12 @@
   "start_url": "/video-call/start-meeting",
   "display": "standalone",
   "theme_color": "#3d3d3d",
-  "background_color": "#3d3d3d"
+  "background_color": "#3d3d3d",
+  "permissions": [
+    "background"
+  ],
+  "background": {
+    "scripts": ["service-worker.js"],
+    "persistent": true
+  }
 }
