@@ -4,4 +4,3 @@ html/.htpasswd
 dist
 html/video-call/index.html
 html/video-call/service-worker.js
-html/video-call/public

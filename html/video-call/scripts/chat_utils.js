@@ -79,8 +79,7 @@ async function handleChatData(data) {
                 encrypted
             );
             const blob = new Blob([decrypted], { type: data.mime });
-            const url = URL.createObjectURL(blob);
-            addReceivedMessage(`<a href="${url}" download="${data.name}" class="chatFileLink">Attachment: ${data.name}</a>`);
+            await displayFileMessage(blob, data.name, data.mime, false);
         } else if (data.type === "chat") {
             const iv = new Uint8Array(data.iv);
             const encrypted = new Uint8Array(data.encrypted);
@@ -117,8 +116,7 @@ async function handleChatData(data) {
                 encryptedArr
             );
             const blob = new Blob([decrypted], { type: fileInfo.mime });
-            const url = URL.createObjectURL(blob);
-            addReceivedMessage(`<a href="${url}" download="${fileInfo.name}" class="chatFileLink">Attachment: ${fileInfo.name}</a>`);
+            await displayFileMessage(blob, fileInfo.name, fileInfo.mime, false);
             delete incomingFiles[key];
         }
     } else {
@@ -223,8 +221,7 @@ async function sendFile(file) {
             totalChunks,
             iv
         });
-        const localUrl = URL.createObjectURL(new Blob([file], { type: mime }));
-        addSentMessage(`<a href="${localUrl}" download="${name}" class="chatFileLink">Attachment: ${name}</a>`);
+        await displayFileMessage(file, name, mime, true);
     }
 }
 
@@ -238,4 +235,30 @@ function updateFileUploadProgress(current, total) {
     if (text) text.textContent = `Uploading... ${percent}% (${sentKB} KB / ${totalKB} KB)`;
 }
 
-window.sendMessage = sendMessage;
+function isImageFile(mimeType) {
+    return mimeType.startsWith('image/');
+}
+
+async function displayFileMessage(blob, fileName, mimeType, isSent = false) {
+    const url = URL.createObjectURL(blob);
+    let messageContent = '';
+    
+    if (isImageFile(mimeType)) {
+        // Show image preview
+        messageContent = `
+            <div class="chatImagePreview">
+                <img src="${url}" alt="${fileName}" style="max-width:200px; border-radius:8px;"/>
+                <br>
+                <a href="${url}" download="${fileName}" class="chatFileLink" style="font-size:0.8em;">Download ${fileName}</a>
+            </div>`;
+    } else {
+        // Regular file download link
+        messageContent = `<a href="${url}" download="${fileName}" class="chatFileLink">Attachment: ${fileName}</a>`;
+    }
+
+    if (isSent) {
+        addSentMessage(messageContent);
+    } else {
+        addReceivedMessage(messageContent);
+    }
+}
