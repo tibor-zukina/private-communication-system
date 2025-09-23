@@ -457,3 +457,22 @@ span {
 #sendFile {
     cursor: pointer;
 }
+
+.localPreviewContainer {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    width: 160px;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #2d2d2d;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.localPreviewVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1); /* Mirror effect */
+}

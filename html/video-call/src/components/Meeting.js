@@ -26,6 +26,9 @@ export default function Meeting() {
       <div id="streamDiv">
         <div className="localVideoDiv">
           <video autoPlay id="localVideo" poster="/video-call/images/video_portrait.png"></video>
+          <div className="localPreviewContainer">
+            <video autoPlay muted playsInline id="localPreview" className="localPreviewVideo"></video>
+          </div>
         </div>
         <div className="micCameraWidgetContainer">
           <img id="cameraToggle" src="/video-call/images/camera_off.png" className="cameraWidget invisibleButton" alt="Enable/disable camera" title="Enable camera" />

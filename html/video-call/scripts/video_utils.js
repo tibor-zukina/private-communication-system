@@ -120,6 +120,14 @@ function makeCallStream(capturedStream) {
         return displayStream;
     } else {
         const localVideo = document.getElementById('localVideo');
+        const localPreview = document.getElementById('localPreview');
+        
+        // Set up preview stream
+        localPreview.srcObject = capturedStream;
+        localPreview.playsInline = true;
+        localPreview.muted = true;
+
+        // Main stream setup
         localVideo.playsInline = true;  // Force inline playback for all devices
         
         // iOS-specific video controls
@@ -260,6 +268,13 @@ function toggleCamera() {
     if (!currentVideoTrack) return;
     videoEnabled = !videoEnabled;
     currentVideoTrack.enabled = videoEnabled;
+    
+    // Keep preview visible even when camera is disabled
+    const localPreview = document.getElementById('localPreview');
+    if (localPreview) {
+        localPreview.style.opacity = videoEnabled ? '1' : '0.5';
+    }
+    
     const camImg = document.getElementById('cameraToggle');
     if (camImg) {
         if (videoEnabled) {
