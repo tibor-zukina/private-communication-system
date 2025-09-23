@@ -18,7 +18,7 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": "/video-call/start-meeting",
+  "start_url": "/video-call/",
   "display": "standalone",
   "theme_color": "#3d3d3d",
   "background_color": "#3d3d3d",
