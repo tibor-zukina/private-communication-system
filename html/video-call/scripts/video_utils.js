@@ -308,7 +308,39 @@ function updateCameraControlForMode() {
     }
 }
 
+// Add URL parameter parsing at the top
+function getUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        key: params.get('key'),
+        path: params.get('path'),
+        id: params.get('id')
+    };
+}
+
 function createCredentialsPrompt() {
+    // Check URL parameters first
+    const urlParams = getUrlParams();
+    
+    if (urlParams.key && urlParams.path) {
+        // Store credentials from URL
+        localStorage.setItem('peerPath', urlParams.path);
+        localStorage.setItem('peerKey', urlParams.key);
+        
+        if (urlParams.id) {
+            // Auto-join with provided ID
+            setUpPeer(urlParams.path, urlParams.key, false);
+            startMeeting(urlParams.id);
+            return;
+        } else {
+            // Auto-start new meeting
+            setUpPeer(urlParams.path, urlParams.key, true);
+            startMeeting();
+            return;
+        }
+    }
+    
+    // Show regular prompt if no URL parameters
     if (document.getElementById('credentialsOverlay')) return;
     
     const hasCredentials = localStorage.getItem('peerPath') && localStorage.getItem('peerKey');
@@ -386,18 +418,16 @@ function submitCredentials() {
     }
     // Initialize based on mode
     if (mode === 'start' || mode === 'join') {
-
         meetingActionLabel = (mode === 'start') ? 'Start meeting' : 'Join meeting';
-        isStartMode = (mode === 'start') ? true : false;
-
-        console.log('Mode is: ', mode, 'Meeting action label is: ', meetingActionLabel, 'isStartMode:', isStartMode);
+        isStartMode = (mode === 'start');
 
         document.getElementById('meetingAction').value = meetingActionLabel;
         setUpPeer(path, key, isStartMode);
         startMeeting(meetingId);
 
         // Remove credentials prompt
-        document.getElementById('credentialsOverlay').remove();
+        const overlay = document.getElementById('credentialsOverlay');
+        if (overlay) overlay.remove();
     }
     else {
         console.log('Invalid meeting mode');

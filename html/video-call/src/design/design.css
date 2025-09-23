@@ -476,3 +476,19 @@ span {
     object-fit: cover;
     transform: scaleX(-1); /* Mirror effect */
 }
+
+#copyMeetingID {
+    cursor: pointer;
+    text-decoration: underline;
+    margin-right: 15px;
+}
+
+#copyMeetingLink {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+#meetingIDCopied,
+#meetingLinkCopied {
+    color: #ed62b5;
+}

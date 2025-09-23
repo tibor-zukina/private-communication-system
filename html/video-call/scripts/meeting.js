@@ -175,27 +175,33 @@ function setupCallHandlers(call) {
     };
 }
 
-function setupInvitationLink() {
+function generateMeetingLink(meetingId, path, key) {
+    const currentUrl = window.location.href.split('?')[0];  // Remove any existing parameters
+    return `${currentUrl}?path=${encodeURIComponent(path)}&key=${encodeURIComponent(key)}&id=${encodeURIComponent(meetingId)}`;
+}
 
-     // Generate invitation URL
+function setupInvitationLink() {
     const invitationElem = document.getElementById('invitationUrl');
-    invitationElem.innerHTML = `<span id="copyMeetingId" style="cursor:pointer;text-decoration:underline;">Copy meeting ID</span>`;
+    const path = localStorage.getItem('peerPath');
+    const key = localStorage.getItem('peerKey');
+    
+    invitationElem.innerHTML = `
+        <span id="copyMeetingId">Copy meeting ID</span>
+        <span id="copyMeetingLink">Copy meeting link</span>
+    `;
 
     document.getElementById('copyMeetingId').onclick = () => {
         navigator.clipboard.writeText(peerId).then(() => {
-            invitationElem.innerHTML = `<span style="color:#ed62b5;">Meeting ID copied!</span>`;
-            setTimeout(() => {
-                invitationElem.innerHTML = `<span id="copyMeetingId" style="cursor:pointer;text-decoration:underline;">Copy meeting ID</span>`;
-                document.getElementById('copyMeetingId').onclick = () => {
-                    navigator.clipboard.writeText(peerId).then(() => {
-                        invitationElem.innerHTML = `<span style="color:#ed62b5;">Meeting ID copied!</span>`;
-                        setTimeout(() => {
-                            invitationElem.innerHTML = `<span id="copyMeetingId" style="cursor:pointer;text-decoration:underline;">Copy meeting ID</span>`;
-                            document.getElementById('copyMeetingId').onclick = arguments.callee;
-                        }, 1200);
-                    });
-                };
-            }, 1200);
+            invitationElem.innerHTML = `<span id="meetingIDCopied">Meeting ID copied!</span>`;
+            setTimeout(() => setupInvitationLink(), 1200);
+        });
+    };
+
+    document.getElementById('copyMeetingLink').onclick = () => {
+        const meetingLink = generateMeetingLink(peerId, path, key);
+        navigator.clipboard.writeText(meetingLink).then(() => {
+            invitationElem.innerHTML = `<span id="meetingLinkCopied">Meeting link copied!</span>`;
+            setTimeout(() => setupInvitationLink(), 1200);
         });
     };
 }
