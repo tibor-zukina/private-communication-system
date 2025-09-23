@@ -477,15 +477,10 @@ span {
     transform: scaleX(-1); /* Mirror effect */
 }
 
-#copyMeetingID {
-    cursor: pointer;
-    text-decoration: underline;
-    margin-right: 15px;
-}
-
+#copyMeetingID,
 #copyMeetingLink {
     cursor: pointer;
-    text-decoration: underline;
+    display: block;
 }
 
 #meetingIDCopied,
