@@ -371,7 +371,7 @@ function createCredentialsPrompt() {
                 <input type="text" id="serverPath" placeholder="Peer server Path" required>
                 <input type="text" id="serverKey" placeholder="Peer server Key" required>
                 <input type="text" id="turnUser" placeholder="TURN server username" required>
-                <input type="password" id="turnPassword" placeholder="TURN server password" required>
+                <input type="text" id="turnPassword" placeholder="TURN server password" required>
             `}
             <div id="meetingIdField" style="display:none">
                 <input type="text" id="meetingId" placeholder="Meeting ID" required>
