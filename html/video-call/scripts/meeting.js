@@ -1,5 +1,9 @@
 const domainHost = 'communication.perpetuumit.com';
 const peerHost = 'chat-communication.perpetuumit.com';
+const turnHost = 'turn-communication.perpetuumit.com';
+const peerPort = 3728;
+const turnPort = 3478;
+const turnTLSPort = 5349;
 
 // Shared variables
 let peer;
@@ -42,17 +46,29 @@ function makeRandomId(length) {
 }
 
 // PeerJS setup
-function setUpPeer(peerServerPath, peerServerKey, isStart = true) {
+function setUpPeer(peerServerPath, peerServerKey, turnUser, turnPassword, isStart = true) {
     isStartMode = isStart;
     peerId = makeRandomId(32);
     
     peer = new Peer(peerId, {
-        host: peerHost,
-        port: 3728,
+     host: peerHost,
+        port: peerPort,
         path: peerServerPath,
         key: peerServerKey,
-        debug: 3
+        debug: 3,
+        secure: true,
+        config: {
+            iceServers: [
+                { urls: `stun:${turnHost}:${turnPort}` },
+                {
+                    urls: `turns:${turnHost}:${turnTLSPort}?transport=tcp`,
+        username: turnUser,
+        credential: turnPassword
+      }
+    ]
+    }
     });
+
 
     peer.on('open', () => {
         const callButton = document.querySelector('.callButton.invisibleButton');
@@ -175,15 +191,17 @@ function setupCallHandlers(call) {
     };
 }
 
-function generateMeetingLink(meetingId, path, key) {
+function generateMeetingLink(meetingId, path, key, turnUser, turnPassword) {
     const currentUrl = window.location.href.split('?')[0];  // Remove any existing parameters
-    return `${currentUrl}?path=${encodeURIComponent(path)}&key=${encodeURIComponent(key)}&id=${encodeURIComponent(meetingId)}`;
+    return `${currentUrl}?path=${encodeURIComponent(path)}&key=${encodeURIComponent(key)}&turnUser=${encodeURIComponent(turnUser)}&turnPassword=${encodeURIComponent(turnPassword)}&id=${encodeURIComponent(meetingId)}`;
 }
 
 function setupInvitationLink() {
     const invitationElem = document.getElementById('invitationUrl');
     const path = localStorage.getItem('peerPath');
     const key = localStorage.getItem('peerKey');
+    const turnUser = localStorage.getItem('turnUser');
+    const turnPassword = localStorage.getItem('turnPassword');
     
     invitationElem.innerHTML = `
         <span id="copyMeetingId">Copy meeting ID</span>
@@ -198,7 +216,7 @@ function setupInvitationLink() {
     };
 
     document.getElementById('copyMeetingLink').onclick = () => {
-        const meetingLink = generateMeetingLink(peerId, path, key);
+        const meetingLink = generateMeetingLink(peerId, path, key, turnUser, turnPassword);
         navigator.clipboard.writeText(meetingLink).then(() => {
             invitationElem.innerHTML = `<span id="meetingLinkCopied">Meeting link copied!</span>`;
             setTimeout(() => setupInvitationLink(), 1200);

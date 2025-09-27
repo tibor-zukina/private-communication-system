@@ -314,6 +314,8 @@ function getUrlParams() {
     return {
         key: params.get('key'),
         path: params.get('path'),
+        turnUser: params.get('turnUser'),
+        turnPassword: params.get('turnPassword'),
         id: params.get('id')
     };
 }
@@ -322,19 +324,21 @@ function createCredentialsPrompt() {
     // Check URL parameters first
     const urlParams = getUrlParams();
     
-    if (urlParams.key && urlParams.path) {
+    if (urlParams.key && urlParams.path && urlParams.turnUser && urlParams.turnPassword) {
         // Store credentials from URL
         localStorage.setItem('peerPath', urlParams.path);
         localStorage.setItem('peerKey', urlParams.key);
+        localStorage.setItem('turnUser', urlParams.turnUser);
+        localStorage.setItem('turnPassword', urlParams.turnPassword);
         
         if (urlParams.id) {
             // Auto-join with provided ID
-            setUpPeer(urlParams.path, urlParams.key, false);
+            setUpPeer(urlParams.path, urlParams.key, urlParams.turnUser, urlParams.turnPassword, false);
             startMeeting(urlParams.id);
             return;
         } else {
             // Auto-start new meeting
-            setUpPeer(urlParams.path, urlParams.key, true);
+            setUpPeer(urlParams.path, urlParams.key, urlParams.turnUser, urlParams.turnPassword, true);
             startMeeting();
             return;
         }
@@ -343,7 +347,8 @@ function createCredentialsPrompt() {
     // Show regular prompt if no URL parameters
     if (document.getElementById('credentialsOverlay')) return;
     
-    const hasCredentials = localStorage.getItem('peerPath') && localStorage.getItem('peerKey');
+    const hasCredentials = localStorage.getItem('peerPath') && localStorage.getItem('peerKey') && 
+                          localStorage.getItem('turnUser') && localStorage.getItem('turnPassword');
     
     const overlay = document.createElement('div');
     overlay.id = 'credentialsOverlay';
@@ -363,8 +368,10 @@ function createCredentialsPrompt() {
                 </div>
             </div>
             ${hasCredentials ? '' : `
-                <input type="text" id="serverPath" placeholder="Server Path" required>
-                <input type="text" id="serverKey" placeholder="Server Key" required>
+                <input type="text" id="serverPath" placeholder="Peer server Path" required>
+                <input type="text" id="serverKey" placeholder="Peer server Key" required>
+                <input type="text" id="turnUser" placeholder="TURN server username" required>
+                <input type="password" id="turnPassword" placeholder="TURN server password" required>
             `}
             <div id="meetingIdField" style="display:none">
                 <input type="text" id="meetingId" placeholder="Meeting ID" required>
@@ -386,30 +393,39 @@ function createCredentialsPrompt() {
 }
 
 function submitCredentials() {
-    const hasCredentials = localStorage.getItem('peerPath') && localStorage.getItem('peerKey');
+    const hasCredentials = localStorage.getItem('peerPath') && localStorage.getItem('peerKey') && 
+                          localStorage.getItem('turnUser') && localStorage.getItem('turnPassword');
     const mode = document.querySelector('input[name="mode"]:checked').value;
     const meetingId = document.getElementById('meetingId').value || null;
     
     let path;
     let key;
+    let turnUser;
+    let turnPassword;
     let isStartMode;
     let meetingActionLabel;
     
     if (hasCredentials) {
         path = localStorage.getItem('peerPath');
         key = localStorage.getItem('peerKey');
+        turnUser = localStorage.getItem('turnUser');
+        turnPassword = localStorage.getItem('turnPassword');
     } else {
         path = document.getElementById('serverPath').value;
         key = document.getElementById('serverKey').value;
+        turnUser = document.getElementById('turnUser').value;
+        turnPassword = document.getElementById('turnPassword').value;
         
-        if (!path || !key) {
-            alert('Please enter both server path and key');
+        if (!path || !key || !turnUser || !turnPassword) {
+            alert('Please enter all required fields: peer server path, peer server key, TURN server username, and TURN server password');
             return;
         }
         
         // Store new credentials
         localStorage.setItem('peerPath', path);
         localStorage.setItem('peerKey', key);
+        localStorage.setItem('turnUser', turnUser);
+        localStorage.setItem('turnPassword', turnPassword);
     }
 
     if (mode === 'join' && !meetingId) {
@@ -422,7 +438,7 @@ function submitCredentials() {
         isStartMode = (mode === 'start');
 
         document.getElementById('meetingAction').value = meetingActionLabel;
-        setUpPeer(path, key, isStartMode);
+        setUpPeer(path, key, turnUser, turnPassword, isStartMode);
         startMeeting(meetingId);
 
         // Remove credentials prompt
