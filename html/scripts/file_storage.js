@@ -1,8 +1,9 @@
 class FileStorageManager {
     constructor() {
         this.apiBaseUrl = '/api/file-storage.php';
-        this.userKeys = {}; // Store encryption keys per user ID
         this.currentUserId = this.generateUserId();
+        this.keyPair = null;
+        this.publicKeys = {}; // Store other users' public keys
     }
 
     generateUserId() {
@@ -14,73 +15,122 @@ class FileStorageManager {
         return result;
     }
 
-    async deriveKeyFromPassword(password) {
-        const encoder = new TextEncoder();
-        const keyMaterial = await window.crypto.subtle.importKey(
-            'raw',
-            encoder.encode(password),
-            { name: 'PBKDF2' },
-            false,
-            ['deriveKey']
-        );
+    async generateKeyPair() {
+        if (this.keyPair) return this.keyPair;
         
-        const salt = new Uint8Array(16); // Fixed salt for same password = same key
-        return await window.crypto.subtle.deriveKey(
+        this.keyPair = await window.crypto.subtle.generateKey(
             {
-                name: 'PBKDF2',
-                salt: salt,
-                iterations: 100000,
+                name: 'RSA-OAEP',
+                modulusLength: 2048,
+                publicExponent: new Uint8Array([1, 0, 1]),
                 hash: 'SHA-256'
             },
-            keyMaterial,
-            { name: 'AES-GCM', length: 256 },
-            false,
+            true,
             ['encrypt', 'decrypt']
+        );
+        
+        return this.keyPair;
+    }
+
+    async exportPublicKey() {
+        if (!this.keyPair) await this.generateKeyPair();
+        const publicKeyBuffer = await window.crypto.subtle.exportKey('spki', this.keyPair.publicKey);
+        return Array.from(new Uint8Array(publicKeyBuffer));
+    }
+
+    async importPublicKey(publicKeyArray) {
+        const publicKeyBuffer = new Uint8Array(publicKeyArray).buffer;
+        return await window.crypto.subtle.importKey(
+            'spki',
+            publicKeyBuffer,
+            {
+                name: 'RSA-OAEP',
+                hash: 'SHA-256'
+            },
+            true,
+            ['encrypt']
         );
     }
 
-    async encryptFile(file, password) {
-        const key = await this.deriveKeyFromPassword(password);
+    async encryptFile(file, recipientPublicKey) {
+        // Generate AES key for file encryption (hybrid approach)
+        const aesKey = await window.crypto.subtle.generateKey(
+            { name: 'AES-GCM', length: 256 },
+            true,
+            ['encrypt', 'decrypt']
+        );
+
+        // Export AES key
+        const aesKeyBuffer = await window.crypto.subtle.exportKey('raw', aesKey);
+        
+        // Encrypt AES key with recipient's RSA public key
+        const encryptedAesKey = await window.crypto.subtle.encrypt(
+            { name: 'RSA-OAEP' },
+            recipientPublicKey,
+            aesKeyBuffer
+        );
+
+        // Encrypt file with AES key
         const iv = window.crypto.getRandomValues(new Uint8Array(12));
         const fileBuffer = await file.arrayBuffer();
-        
-        const encrypted = await window.crypto.subtle.encrypt(
+        const encryptedFile = await window.crypto.subtle.encrypt(
             { name: 'AES-GCM', iv },
-            key,
+            aesKey,
             fileBuffer
         );
 
-        // Combine IV and encrypted data
-        const result = new Uint8Array(iv.length + encrypted.byteLength);
-        result.set(iv, 0);
-        result.set(new Uint8Array(encrypted), iv.length);
-        
-        return new Blob([result], { type: 'application/octet-stream' });
+        // Combine encrypted AES key, IV, and encrypted file
+        const result = {
+            encryptedAesKey: Array.from(new Uint8Array(encryptedAesKey)),
+            iv: Array.from(iv),
+            encryptedFile: new Uint8Array(encryptedFile)
+        };
+
+        return new Blob([JSON.stringify({
+            encryptedAesKey: result.encryptedAesKey,
+            iv: result.iv,
+            encryptedFile: Array.from(result.encryptedFile)
+        })], { type: 'application/json' });
     }
 
-    async decryptFile(encryptedBlob, password) {
-        const key = await this.deriveKeyFromPassword(password);
-        const buffer = await encryptedBlob.arrayBuffer();
-        const dataArray = new Uint8Array(buffer);
-        
-        const iv = dataArray.slice(0, 12);
-        const encrypted = dataArray.slice(12);
+    async decryptFile(encryptedBlob) {
+        if (!this.keyPair) throw new Error('No private key available');
 
-        try {
-            const decrypted = await window.crypto.subtle.decrypt(
-                { name: 'AES-GCM', iv },
-                key,
-                encrypted
-            );
-            return new Blob([decrypted]);
-        } catch (error) {
-            throw new Error('Invalid password or corrupted file');
-        }
+        const encryptedData = JSON.parse(await encryptedBlob.text());
+        
+        // Decrypt AES key with private RSA key
+        const encryptedAesKeyBuffer = new Uint8Array(encryptedData.encryptedAesKey).buffer;
+        const aesKeyBuffer = await window.crypto.subtle.decrypt(
+            { name: 'RSA-OAEP' },
+            this.keyPair.privateKey,
+            encryptedAesKeyBuffer
+        );
+
+        // Import AES key
+        const aesKey = await window.crypto.subtle.importKey(
+            'raw',
+            aesKeyBuffer,
+            { name: 'AES-GCM' },
+            false,
+            ['decrypt']
+        );
+
+        // Decrypt file with AES key
+        const iv = new Uint8Array(encryptedData.iv);
+        const encryptedFileBuffer = new Uint8Array(encryptedData.encryptedFile).buffer;
+        
+        const decryptedFile = await window.crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv },
+            aesKey,
+            encryptedFileBuffer
+        );
+
+        return new Blob([decryptedFile]);
     }
 
-    async uploadFile(file, recipientId, password) {
+    async uploadFile(file, recipientId, recipientPublicKey) {
         try {
-            const encryptedFile = await this.encryptFile(file, password);
+            const encryptedFile = await this.encryptFile(file, recipientPublicKey);
             const formData = new FormData();
             formData.append('file', encryptedFile, file.name);
             formData.append('recipient_id', recipientId);
@@ -119,7 +169,7 @@ class FileStorageManager {
         }
     }
 
-    async downloadFile(userId, fileId, password) {
+    async downloadFile(userId, fileId) {
         try {
             const response = await fetch(`${this.apiBaseUrl}?action=download&user_id=${encodeURIComponent(userId)}&file_id=${encodeURIComponent(fileId)}`);
             
@@ -128,7 +178,7 @@ class FileStorageManager {
             }
 
             const encryptedBlob = await response.blob();
-            return await this.decryptFile(encryptedBlob, password);
+            return await this.decryptFile(encryptedBlob);
         } catch (error) {
             console.error('Download error:', error);
             throw error;
@@ -153,8 +203,8 @@ class FileStorageManager {
                     <label>Recipient User ID (24 characters):</label>
                     <input type="text" id="recipientUserId" maxlength="24" placeholder="Enter recipient's user ID">
                     
-                    <label>Encryption Password:</label>
-                    <input type="password" id="encryptionPassword" placeholder="Enter password">
+                    <label>Recipient's Public Key:</label>
+                    <textarea id="recipientPublicKey" rows="4" placeholder="Paste recipient's public key here..."></textarea>
                     
                     <label>Select Files:</label>
                     <input type="file" id="fileStorageInput" multiple>
@@ -212,13 +262,13 @@ class FileStorageManager {
 
     async handleFileUpload(modal) {
         const recipientId = modal.querySelector('#recipientUserId').value.trim();
-        const password = modal.querySelector('#encryptionPassword').value;
+        const publicKeyText = modal.querySelector('#recipientPublicKey').value.trim();
         const fileInput = modal.querySelector('#fileStorageInput');
         const progressDiv = modal.querySelector('#uploadProgress');
         const progressBar = modal.querySelector('#uploadProgressBar');
         const progressText = modal.querySelector('#uploadProgressText');
 
-        if (!recipientId || !password || fileInput.files.length === 0) {
+        if (!recipientId || !publicKeyText || fileInput.files.length === 0) {
             alert('Please fill all fields and select at least one file');
             return;
         }
@@ -228,16 +278,20 @@ class FileStorageManager {
             return;
         }
 
-        // Store password for this user
-        this.userKeys[recipientId] = password;
-
-        progressDiv.style.display = 'block';
-        const files = Array.from(fileInput.files);
-        let completed = 0;
-
         try {
+            // Parse and import recipient's public key
+            const publicKeyArray = JSON.parse(publicKeyText);
+            const recipientPublicKey = await this.importPublicKey(publicKeyArray);
+            
+            // Store for future use
+            this.publicKeys[recipientId] = recipientPublicKey;
+
+            progressDiv.style.display = 'block';
+            const files = Array.from(fileInput.files);
+            let completed = 0;
+
             for (const file of files) {
-                await this.uploadFile(file, recipientId, password);
+                await this.uploadFile(file, recipientId, recipientPublicKey);
                 completed++;
                 const percent = Math.round((completed / files.length) * 100);
                 progressBar.style.width = percent + '%';
@@ -262,9 +316,11 @@ class FileStorageManager {
                     <input type="text" id="downloadUserId" value="${this.currentUserId}" readonly>
                     <button id="copyUserIdBtn" class="callButton" style="margin-left:8px;">Copy</button>
                     
-                    <label>Decryption Password:</label>
-                    <input type="password" id="decryptionPassword" placeholder="Enter password">
+                    <label>Your Public Key (share this with senders):</label>
+                    <textarea id="publicKeyDisplay" rows="4" readonly></textarea>
+                    <button id="copyPublicKeyBtn" class="callButton" style="margin-left:8px;">Copy Public Key</button>
                     
+                    <button id="generateKeysBtn" class="callButton">Generate Key Pair</button>
                     <button id="listFilesBtn" class="callButton">List Available Files</button>
                     
                     <div id="filesList"></div>
@@ -281,16 +337,40 @@ class FileStorageManager {
     }
 
     setupDownloadModalEvents(modal) {
+        const generateBtn = modal.querySelector('#generateKeysBtn');
         const listBtn = modal.querySelector('#listFilesBtn');
         const cancelBtn = modal.querySelector('#cancelDownloadBtn');
-        const copyBtn = modal.querySelector('#copyUserIdBtn');
+        const copyUserIdBtn = modal.querySelector('#copyUserIdBtn');
+        const copyPublicKeyBtn = modal.querySelector('#copyPublicKeyBtn');
+        const publicKeyDisplay = modal.querySelector('#publicKeyDisplay');
 
-        copyBtn.addEventListener('click', () => {
+        generateBtn.addEventListener('click', async () => {
+            await this.generateKeyPair();
+            const publicKeyArray = await this.exportPublicKey();
+            publicKeyDisplay.value = JSON.stringify(publicKeyArray);
+            generateBtn.textContent = 'Keys Generated!';
+            generateBtn.disabled = true;
+            setTimeout(() => {
+                generateBtn.textContent = 'Generate Key Pair';
+                generateBtn.disabled = false;
+            }, 2000);
+        });
+
+        copyUserIdBtn.addEventListener('click', () => {
             const userIdInput = modal.querySelector('#downloadUserId');
             navigator.clipboard.writeText(userIdInput.value).then(() => {
-                copyBtn.textContent = 'Copied!';
-                setTimeout(() => copyBtn.textContent = 'Copy', 1200);
+                copyUserIdBtn.textContent = 'Copied!';
+                setTimeout(() => copyUserIdBtn.textContent = 'Copy', 1200);
             });
+        });
+
+        copyPublicKeyBtn.addEventListener('click', () => {
+            if (publicKeyDisplay.value) {
+                navigator.clipboard.writeText(publicKeyDisplay.value).then(() => {
+                    copyPublicKeyBtn.textContent = 'Copied!';
+                    setTimeout(() => copyPublicKeyBtn.textContent = 'Copy Public Key', 1200);
+                });
+            }
         });
 
         listBtn.addEventListener('click', async () => {
@@ -304,23 +384,22 @@ class FileStorageManager {
 
     async handleListFiles(modal) {
         const userId = modal.querySelector('#downloadUserId').value;
-        const password = modal.querySelector('#decryptionPassword').value;
         const filesList = modal.querySelector('#filesList');
 
-        if (!password) {
-            alert('Please enter decryption password');
+        if (!this.keyPair) {
+            alert('Please generate your key pair first');
             return;
         }
 
         try {
             const files = await this.listFiles(userId);
-            this.displayFilesList(files, filesList, userId, password);
+            this.displayFilesList(files, filesList, userId);
         } catch (error) {
             alert('Failed to list files: ' + error.message);
         }
     }
 
-    displayFilesList(files, container, userId, password) {
+    displayFilesList(files, container, userId) {
         container.innerHTML = '';
         
         if (files.length === 0) {
@@ -351,18 +430,18 @@ class FileStorageManager {
             btn.addEventListener('click', async (e) => {
                 const fileId = e.target.getAttribute('data-file-id');
                 const filename = e.target.getAttribute('data-filename');
-                await this.handleFileDownload(userId, fileId, filename, password, e.target);
+                await this.handleFileDownload(userId, fileId, filename, e.target);
             });
         });
     }
 
-    async handleFileDownload(userId, fileId, filename, password, button) {
+    async handleFileDownload(userId, fileId, filename, button) {
         const originalText = button.textContent;
         button.textContent = 'Downloading...';
         button.disabled = true;
 
         try {
-            const decryptedBlob = await this.downloadFile(userId, fileId, password);
+            const decryptedBlob = await this.downloadFile(userId, fileId);
             
             // Create download link
             const url = URL.createObjectURL(decryptedBlob);

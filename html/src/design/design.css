@@ -344,9 +344,34 @@ span {
     font-size: 0.9em;
 }
 
+.upload-form textarea, .download-form textarea {
+    padding: 12px;
+    border: 1px solid #2e2e2e;
+    border-radius: 6px;
+    background: #2d2d2d;
+    color: white;
+    font-size: 0.85em;
+    font-family: monospace;
+    resize: vertical;
+    min-height: 80px;
+}
+
 .upload-form input:focus, .download-form input:focus {
     border-color: #ed62b5;
     outline: none;
+}
+
+.upload-form textarea:focus, .download-form textarea:focus {
+    border-color: #ed62b5;
+    outline: none;
+}
+
+.upload-form input::placeholder, .download-form input::placeholder {
+    color: #888;
+}
+
+.upload-form textarea::placeholder, .download-form textarea::placeholder {
+    color: #888;
 }
 
 #selectedFilesList {
