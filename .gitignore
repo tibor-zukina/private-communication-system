@@ -2,6 +2,6 @@ secrets.json
 node_modules
 html/.htpasswd
 dist
-html/video-call/index.html
-html/video-call/service-worker.js
+html/index.html
+html/service-worker.js
 configuration/turnserver.conf

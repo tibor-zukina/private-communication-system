@@ -1,5 +1,5 @@
 {
-  "name": "video-call",
+  "name": "communication-system",
   "version": "1.0.0",
   "description": "Private Communication System Video Call",
   "main": "src/index.js",

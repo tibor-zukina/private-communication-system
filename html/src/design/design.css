@@ -3,7 +3,7 @@ body {
     padding: 0;
     background-color: #3d3d3d;
     background-repeat: repeat;
-    background-image: url(https://communication.perpetuumit.com/video-call/images/empty_background_pattern.jpg);
+    background-image: url(https://communication.perpetuumit.com/images/empty_background_pattern.jpg);
 }
 
 ::-webkit-scrollbar {
@@ -291,6 +291,166 @@ span {
     filter: brightness(75%);
 }
 
+/* File Storage Modal Styles */
+.file-storage-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.file-storage-modal-content {
+    background: #3d3d3d;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.file-storage-modal-content h3 {
+    color: white;
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.upload-form, .download-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.upload-form label, .download-form label {
+    color: white;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.upload-form input, .download-form input {
+    padding: 12px;
+    border: 1px solid #2e2e2e;
+    border-radius: 6px;
+    background: #2d2d2d;
+    color: white;
+    font-size: 0.9em;
+}
+
+.upload-form input:focus, .download-form input:focus {
+    border-color: #ed62b5;
+    outline: none;
+}
+
+#selectedFilesList {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #2e2e2e;
+    border-radius: 6px;
+    padding: 10px;
+    background: #2d2d2d;
+}
+
+.selected-file {
+    color: white;
+    padding: 5px 0;
+    border-bottom: 1px solid #404040;
+    font-size: 0.85em;
+}
+
+.selected-file:last-child {
+    border-bottom: none;
+}
+
+.upload-progress {
+    margin: 15px 0;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #2d2d2d;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #404040;
+}
+
+#uploadProgressBar {
+    height: 100%;
+    background: linear-gradient(90deg, #ed62b5, #d44967);
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+#uploadProgressText {
+    color: white;
+    font-size: 0.9em;
+    margin-top: 8px;
+    display: block;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+#filesList {
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 15px 0;
+    border: 1px solid #2e2e2e;
+    border-radius: 6px;
+    background: #2d2d2d;
+}
+
+.download-file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #404040;
+    color: white;
+}
+
+.download-file-item:last-child {
+    border-bottom: none;
+}
+
+.file-info {
+    flex-grow: 1;
+}
+
+.file-info strong {
+    font-size: 1em;
+    color: #ed62b5;
+}
+
+.file-info small {
+    color: #bfbfbf;
+    font-size: 0.8em;
+}
+
+.download-btn {
+    min-width: 100px;
+    padding: 8px 12px;
+    font-size: 0.85em;
+    margin-left: 15px;
+}
+
+.download-btn:disabled {
+    background: #515151;
+    cursor: not-allowed;
+}
+
 /* Mobile-friendly styles */
 @media screen and (max-width: 1024px) {
     #section {
@@ -486,4 +646,39 @@ span {
 #meetingIDCopied,
 #meetingLinkCopied {
     color: #ed62b5;
+}
+
+.credentials-prompt p {
+    color: #bfbfbf;
+    text-align: center;
+    margin: 15px 0;
+    font-size: 0.9em;
+}
+
+.mode-select-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 10px 0;
+    padding: 10px;
+    background: #2d2d2d;
+    border-radius: 6px;
+    border: 1px solid #404040;
+}
+
+.mode-select-option:hover {
+    border-color: #ed62b5;
+    background: #353535;
+}
+
+.mode-select-option label {
+    color: white;
+    cursor: pointer;
+    font-size: 0.9em;
+    flex-grow: 1;
+}
+
+.mode-select-option input[type="radio"] {
+    margin: 0;
+    cursor: pointer;
 }

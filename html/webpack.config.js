@@ -9,7 +9,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
-    publicPath: '/video-call/dist/' // Points to the dist subdirectory
+    publicPath: '/dist/' // Points to the dist subdirectory
   },
   module: {
     rules: [

@@ -3,22 +3,22 @@
   "name": "Private Communication System",
   "icons": [
     {
-      "src": "/video-call/images/favicon.ico",
+      "src": "/images/favicon.ico",
       "sizes": "64x64",
       "type": "image/x-icon"
     },
     {
-      "src": "/video-call/images/pwa-192x192.png",
+      "src": "/images/pwa-192x192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/video-call/images/pwa-512x512.png",
+      "src": "/images/pwa-512x512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
-  "start_url": "/video-call/",
+  "start_url": "/",
   "display": "standalone",
   "theme_color": "#3d3d3d",
   "background_color": "#3d3d3d",

@@ -142,7 +142,7 @@ function makeCallStream(capturedStream) {
                 navigator.mediaSession.metadata = new MediaMetadata({
                     title: 'Private Meeting',
                     artwork: [{
-                        src: '/video-call/images/pwa-192x192.png',
+                        src: '/images/pwa-192x192.png',
                         sizes: '192x192',
                         type: 'image/png'
                     }]
@@ -186,7 +186,7 @@ function enableFullscreen(video) {
         showFullscreen = document.createElement("img");
         showFullscreen.id = "showFullscreen";
         showFullscreen.className = "fullscreenWidget";
-        showFullscreen.src = '/video-call/images/fullscreen.png';
+        showFullscreen.src = '/images/fullscreen.png';
 
         video.parentNode.onmouseover = () => {
             showFullscreen.style.display = 'inline-block';
@@ -220,7 +220,7 @@ function initMuteControl(localStream) {
     micMuted = true;
     const micImg = document.getElementById('micToggle');
     if (micImg) {
-        micImg.src = '/video-call/images/microphone_muted.png';
+        micImg.src = '/images/microphone_muted.png';
         micImg.className = 'micWidget';
         micImg.style.display = '';
         micImg.onclick = toggleMute;
@@ -237,7 +237,7 @@ function initCameraControl(localStream) {
     videoEnabled = false;
     const camImg = document.getElementById('cameraToggle');
     if (camImg) {
-        camImg.src = '/video-call/images/camera_off.png';
+        camImg.src = '/images/camera_off.png';
         camImg.className = 'cameraWidget';
         camImg.style.display = '';
         camImg.onclick = toggleCamera;
@@ -253,10 +253,10 @@ function toggleMute() {
     const micImg = document.getElementById('micToggle');
     if (micImg) {
         if (micMuted) {
-            micImg.src = '/video-call/images/microphone_muted.png';
+            micImg.src = '/images/microphone_muted.png';
             micImg.title = 'Unmute microphone';
         } else {
-            micImg.src = '/video-call/images/microphone.png';
+            micImg.src = '/images/microphone.png';
             micImg.title = 'Mute microphone';
         }
     }
@@ -278,10 +278,10 @@ function toggleCamera() {
     const camImg = document.getElementById('cameraToggle');
     if (camImg) {
         if (videoEnabled) {
-            camImg.src = '/video-call/images/camera.png';
+            camImg.src = '/images/camera.png';
             camImg.title = 'Disable camera';
         } else {
-            camImg.src = '/video-call/images/camera_off.png';
+            camImg.src = '/images/camera_off.png';
             camImg.title = 'Enable camera';
         }
     }
@@ -292,7 +292,7 @@ function updateCameraControlForMode() {
     const camImg = document.getElementById('cameraToggle');
     if (recordingMode === 'display') {
         if (camImg) {
-            camImg.src = '/video-call/images/camera_off.png';
+            camImg.src = '/images/camera_off.png';
             camImg.title = 'Camera disabled during screen sharing';
             camImg.style.opacity = '0.5';
             camImg.onclick = null;
@@ -307,152 +307,6 @@ function updateCameraControlForMode() {
         }
     }
 }
-
-// Add URL parameter parsing at the top
-function getUrlParams() {
-    const params = new URLSearchParams(window.location.search);
-    return {
-        key: params.get('key'),
-        path: params.get('path'),
-        turnUser: params.get('turnUser'),
-        turnPassword: params.get('turnPassword'),
-        id: params.get('id')
-    };
-}
-
-function createCredentialsPrompt() {
-    // Check URL parameters first
-    const urlParams = getUrlParams();
-    
-    if (urlParams.key && urlParams.path && urlParams.turnUser && urlParams.turnPassword) {
-        // Store credentials from URL
-        localStorage.setItem('peerPath', urlParams.path);
-        localStorage.setItem('peerKey', urlParams.key);
-        localStorage.setItem('turnUser', urlParams.turnUser);
-        localStorage.setItem('turnPassword', urlParams.turnPassword);
-        
-        if (urlParams.id) {
-            // Auto-join with provided ID
-            setUpPeer(urlParams.path, urlParams.key, urlParams.turnUser, urlParams.turnPassword, false);
-            startMeeting(urlParams.id);
-            return;
-        } else {
-            // Auto-start new meeting
-            setUpPeer(urlParams.path, urlParams.key, urlParams.turnUser, urlParams.turnPassword, true);
-            startMeeting();
-            return;
-        }
-    }
-    
-    // Show regular prompt if no URL parameters
-    if (document.getElementById('credentialsOverlay')) return;
-    
-    const hasCredentials = localStorage.getItem('peerPath') && localStorage.getItem('peerKey') && 
-                          localStorage.getItem('turnUser') && localStorage.getItem('turnPassword');
-    
-    const overlay = document.createElement('div');
-    overlay.id = 'credentialsOverlay';
-    overlay.className = 'credentials-overlay';
-    
-    overlay.innerHTML = `
-        <div class="credentials-prompt">
-            <h3>Meeting Setup</h3>
-            <div class="mode-select">
-                <div class="mode-select-option">
-                    <label id="startModeLabel">Start New Meeting</label>
-                    <input type="radio" name="mode" value="start" for="startModeLabel" checked/> 
-                </div>
-                <div class="mode-select-option">
-                    <label id="joinModeLabel">Join Meeting</label>
-                    <input type="radio" name="mode" value="join" for="joinModeLabel"/> 
-                </div>
-            </div>
-            ${hasCredentials ? '' : `
-                <input type="text" id="serverPath" placeholder="Peer server Path" required>
-                <input type="text" id="serverKey" placeholder="Peer server Key" required>
-                <input type="text" id="turnUser" placeholder="TURN server username" required>
-                <input type="text" id="turnPassword" placeholder="TURN server password" required>
-            `}
-            <div id="meetingIdField" style="display:none">
-                <input type="text" id="meetingId" placeholder="Meeting ID" required>
-            </div>
-            <button class="callButton" onclick="submitCredentials()">Continue</button>
-        </div>
-    `;
-    
-    document.body.appendChild(overlay);
-
-    // Add mode change handler
-    const modeInputs = overlay.querySelectorAll('input[name="mode"]');
-    modeInputs.forEach(input => {
-        input.onchange = () => {
-            const meetingIdField = document.getElementById('meetingIdField');
-            meetingIdField.style.display = input.value === 'join' ? 'block' : 'none';
-        };
-    });
-}
-
-function submitCredentials() {
-    const hasCredentials = localStorage.getItem('peerPath') && localStorage.getItem('peerKey') && 
-                          localStorage.getItem('turnUser') && localStorage.getItem('turnPassword');
-    const mode = document.querySelector('input[name="mode"]:checked').value;
-    const meetingId = document.getElementById('meetingId').value || null;
-    
-    let path;
-    let key;
-    let turnUser;
-    let turnPassword;
-    let isStartMode;
-    let meetingActionLabel;
-    
-    if (hasCredentials) {
-        path = localStorage.getItem('peerPath');
-        key = localStorage.getItem('peerKey');
-        turnUser = localStorage.getItem('turnUser');
-        turnPassword = localStorage.getItem('turnPassword');
-    } else {
-        path = document.getElementById('serverPath').value;
-        key = document.getElementById('serverKey').value;
-        turnUser = document.getElementById('turnUser').value;
-        turnPassword = document.getElementById('turnPassword').value;
-        
-        if (!path || !key || !turnUser || !turnPassword) {
-            alert('Please enter all required fields: peer server path, peer server key, TURN server username, and TURN server password');
-            return;
-        }
-        
-        // Store new credentials
-        localStorage.setItem('peerPath', path);
-        localStorage.setItem('peerKey', key);
-        localStorage.setItem('turnUser', turnUser);
-        localStorage.setItem('turnPassword', turnPassword);
-    }
-
-    if (mode === 'join' && !meetingId) {
-        alert('Please enter a meeting ID');
-        return;
-    }
-    // Initialize based on mode
-    if (mode === 'start' || mode === 'join') {
-        meetingActionLabel = (mode === 'start') ? 'Start meeting' : 'Join meeting';
-        isStartMode = (mode === 'start');
-
-        document.getElementById('meetingAction').value = meetingActionLabel;
-        setUpPeer(path, key, turnUser, turnPassword, isStartMode);
-        startMeeting(meetingId);
-
-        // Remove credentials prompt
-        const overlay = document.getElementById('credentialsOverlay');
-        if (overlay) overlay.remove();
-    }
-    else {
-        console.log('Invalid meeting mode');
-    }
-  
-}
-
-// Replace existing initialization code with:
-createCredentialsPrompt();
 
 window.toggleMedia = toggleMedia;
 

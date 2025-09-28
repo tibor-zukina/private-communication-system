@@ -5,8 +5,8 @@ import Meeting from './components/Meeting';
 export default function App() {
   return (
     <Routes>
-      <Route path="/video-call/" element={<Meeting />} />
-      <Route path="*" element={<Navigate to="/video-call/" replace />} />
+      <Route path="/" element={<Meeting />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

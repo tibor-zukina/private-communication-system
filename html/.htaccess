@@ -1,1 +1,12 @@
-Options -Indexes
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Don't rewrite files or directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Rewrite start-meeting and join-meeting to index.html
+    RewriteRule ^(start-meeting|join-meeting)$ index.html [L]
+
+</IfModule>
