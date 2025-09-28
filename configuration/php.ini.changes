@@ -1,0 +1,7 @@
+# /etc/php.ini
+# This change is required for file upload
+
+upload_max_filesize = 1000M
+post_max_size = 1000M
+max_execution_time = 300
+memory_limit = 512M

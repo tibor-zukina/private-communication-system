@@ -1,0 +1,4 @@
+# /etc/httpd/conf/httpd.conf
+# This change is required for file upload
+
+LimitRequestBody 1073741824
